@@ -28,6 +28,7 @@ typedef void (^rdhttp_progress_block_t)(float progress, BOOL upload);
 @property(nonatomic, readonly) NSError  *networkError;
 @property(nonatomic, readonly) NSError  *error;
 @property(nonatomic, readonly) NSString *responseText;
+@property(nonatomic, readonly) NSData   *responseData;
 @end
 
 

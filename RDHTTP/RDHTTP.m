@@ -38,6 +38,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @implementation RDHTTPResponse
 @synthesize error;
 @synthesize userInfo;
+@synthesize responseData;
 
 - (id)initWithResponse:(NSHTTPURLResponse *)aResponse 
                request:(RDHTTPRequest *)aRequest
@@ -111,8 +112,10 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 }
 
 - (NSString *)description {
-    return [NSString stringWithFormat:@"<RDHTTPResponse: URL %@ code %d length: %d>", [request _nsurlrequest].URL,
-            response.statusCode, [responseData length]];
+    return [NSString stringWithFormat:@"<RDHTTPResponse: URL %@ code %d length: %d>", 
+            [request _nsurlrequest].URL,
+            response.statusCode, 
+            [responseData length]];
 }
 
 @end
@@ -189,10 +192,15 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     
     request->urlRequest = [urlRequest copyWithZone:zone];
     request.dispatchQueue = self.dispatchQueue;
+
     // don't use self.formPost here, because it will just create new formPost
-    request.formPost = [formPost copyWithZone:zone];
+    RDHTTPFormPost *formPostCopy = [formPost copyWithZone:zone];
+    request.formPost = formPostCopy;
+    [formPostCopy release];
     
-    request.userInfo = [self.userInfo copyWithZone:zone];
+    NSDictionary *userInfoCopy = [userInfo copyWithZone:zone];
+    request.userInfo = userInfoCopy;
+    [userInfoCopy release];
     request.saveResponseToFile = saveResponseToFile;
     
     return request;
@@ -284,7 +292,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
                                                        progressHandler:aProgressBlock
                                                         headersHandler:aHeadersBlock];
     [conn start];
-    return conn;
+    return [conn autorelease];
 }
 
 
@@ -345,6 +353,25 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     
     [multipartPostFiles setObject:filePath forKey:key];
 }
+#pragma mark - internal
+
+- (NSData *)dataByAddingPercentEscapesToString:(NSString *)string usingEncoding:(CFStringEncoding)encoding {
+    CFStringRef retval;
+    
+    retval = CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, 
+                                                     (CFStringRef)string,
+                                                     NULL,
+                                                     CFSTR(":/?#[]@!$ &'()*+,;=\"<>%{}|\\^~`"),
+                                                     encoding);
+    if (retval == nil) {
+        return [NSData data];
+    }
+    
+    CFDataRef data = CFStringCreateExternalRepresentation(kCFAllocatorDefault, retval, encoding, '?');
+    CFRelease(retval);
+    
+    return [(__bridge_transfer NSData *)data autorelease];
+}
 
 - (void)buildPostBodyForRequest:(RDHTTPRequest *)request {
     if (postFields == nil)
@@ -359,10 +386,10 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         if (first == NO)
             [data appendBytes:"&" length:1];
         
-        [data appendData:[[[self class] stringByAddingPercentEscapesToString:key] dataUsingEncoding:NSUTF8StringEncoding]];
+        [data appendData:[self dataByAddingPercentEscapesToString:key usingEncoding:kCFStringEncodingUTF8]];
         [data appendBytes:"=" length:1];
-        [data appendData:[[[self class] stringByAddingPercentEscapesToString:[postFields objectForKey:key]] dataUsingEncoding:NSUTF8StringEncoding]];
-        
+        [data appendData:[self dataByAddingPercentEscapesToString:[postFields objectForKey:key]
+                                                    usingEncoding:kCFStringEncodingUTF8]];
         first = NO;
     }
     
@@ -381,7 +408,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
                                                      CFSTR(":/?#[]@!$ &'()*+,;=\"<>%{}|\\^~`"),
                                                      CFStringConvertNSStringEncodingToEncoding(NSUTF8StringEncoding));
     
-    return [(NSString *)retval autorelease];
+    return [(__bridge_transfer NSString *)retval autorelease];
 }
 
 @end
