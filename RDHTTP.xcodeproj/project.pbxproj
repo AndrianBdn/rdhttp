@@ -1,0 +1,435 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E63D88E8148141F000F15E16 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88E7148141F000F15E16 /* UIKit.framework */; };
+		E63D88EA148141F000F15E16 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88E9148141F000F15E16 /* Foundation.framework */; };
+		E63D88EC148141F000F15E16 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88EB148141F000F15E16 /* CoreGraphics.framework */; };
+		E63D88F2148141F000F15E16 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E63D88F0148141F000F15E16 /* InfoPlist.strings */; };
+		E63D88F4148141F000F15E16 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = E63D88F3148141F000F15E16 /* main.m */; };
+		E63D88F8148141F000F15E16 /* RDHTTPAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = E63D88F7148141F000F15E16 /* RDHTTPAppDelegate.m */; };
+		E63D8900148141F000F15E16 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88FF148141F000F15E16 /* SenTestingKit.framework */; };
+		E63D8901148141F000F15E16 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88E7148141F000F15E16 /* UIKit.framework */; };
+		E63D8902148141F000F15E16 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88E9148141F000F15E16 /* Foundation.framework */; };
+		E63D890A148141F000F15E16 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E63D8908148141F000F15E16 /* InfoPlist.strings */; };
+		E63D890D148141F000F15E16 /* RDHTTPTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E63D890C148141F000F15E16 /* RDHTTPTests.m */; };
+		E63D89181481422D00F15E16 /* RDHTTP.m in Sources */ = {isa = PBXBuildFile; fileRef = E63D89171481422D00F15E16 /* RDHTTP.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E63D8903148141F000F15E16 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E63D88DA148141F000F15E16 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E63D88E2148141F000F15E16;
+			remoteInfo = RDHTTP;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		E63D88E3148141F000F15E16 /* RDHTTP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RDHTTP.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E63D88E7148141F000F15E16 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		E63D88E9148141F000F15E16 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		E63D88EB148141F000F15E16 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		E63D88EF148141F000F15E16 /* RDHTTP-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "RDHTTP-Info.plist"; sourceTree = "<group>"; };
+		E63D88F1148141F000F15E16 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		E63D88F3148141F000F15E16 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		E63D88F5148141F000F15E16 /* RDHTTP-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RDHTTP-Prefix.pch"; sourceTree = "<group>"; };
+		E63D88F6148141F000F15E16 /* RDHTTPAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDHTTPAppDelegate.h; sourceTree = "<group>"; };
+		E63D88F7148141F000F15E16 /* RDHTTPAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDHTTPAppDelegate.m; sourceTree = "<group>"; };
+		E63D88FE148141F000F15E16 /* RDHTTPTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RDHTTPTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E63D88FF148141F000F15E16 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
+		E63D8907148141F000F15E16 /* RDHTTPTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "RDHTTPTests-Info.plist"; sourceTree = "<group>"; };
+		E63D8909148141F000F15E16 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		E63D890B148141F000F15E16 /* RDHTTPTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDHTTPTests.h; sourceTree = "<group>"; };
+		E63D890C148141F000F15E16 /* RDHTTPTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDHTTPTests.m; sourceTree = "<group>"; };
+		E63D89161481422D00F15E16 /* RDHTTP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RDHTTP.h; sourceTree = "<group>"; };
+		E63D89171481422D00F15E16 /* RDHTTP.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RDHTTP.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E63D88E0148141F000F15E16 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E63D88E8148141F000F15E16 /* UIKit.framework in Frameworks */,
+				E63D88EA148141F000F15E16 /* Foundation.framework in Frameworks */,
+				E63D88EC148141F000F15E16 /* CoreGraphics.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E63D88FA148141F000F15E16 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E63D8900148141F000F15E16 /* SenTestingKit.framework in Frameworks */,
+				E63D8901148141F000F15E16 /* UIKit.framework in Frameworks */,
+				E63D8902148141F000F15E16 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E63D88D8148141F000F15E16 = {
+			isa = PBXGroup;
+			children = (
+				E63D88ED148141F000F15E16 /* RDHTTP */,
+				E63D8905148141F000F15E16 /* RDHTTPTests */,
+				E63D88E6148141F000F15E16 /* Frameworks */,
+				E63D88E4148141F000F15E16 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E63D88E4148141F000F15E16 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E63D88E3148141F000F15E16 /* RDHTTP.app */,
+				E63D88FE148141F000F15E16 /* RDHTTPTests.octest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E63D88E6148141F000F15E16 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E63D88E7148141F000F15E16 /* UIKit.framework */,
+				E63D88E9148141F000F15E16 /* Foundation.framework */,
+				E63D88EB148141F000F15E16 /* CoreGraphics.framework */,
+				E63D88FF148141F000F15E16 /* SenTestingKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E63D88ED148141F000F15E16 /* RDHTTP */ = {
+			isa = PBXGroup;
+			children = (
+				E63D89161481422D00F15E16 /* RDHTTP.h */,
+				E63D89171481422D00F15E16 /* RDHTTP.m */,
+				E63D88F6148141F000F15E16 /* RDHTTPAppDelegate.h */,
+				E63D88F7148141F000F15E16 /* RDHTTPAppDelegate.m */,
+				E63D88EE148141F000F15E16 /* Supporting Files */,
+			);
+			path = RDHTTP;
+			sourceTree = "<group>";
+		};
+		E63D88EE148141F000F15E16 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				E63D88EF148141F000F15E16 /* RDHTTP-Info.plist */,
+				E63D88F0148141F000F15E16 /* InfoPlist.strings */,
+				E63D88F3148141F000F15E16 /* main.m */,
+				E63D88F5148141F000F15E16 /* RDHTTP-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		E63D8905148141F000F15E16 /* RDHTTPTests */ = {
+			isa = PBXGroup;
+			children = (
+				E63D890B148141F000F15E16 /* RDHTTPTests.h */,
+				E63D890C148141F000F15E16 /* RDHTTPTests.m */,
+				E63D8906148141F000F15E16 /* Supporting Files */,
+			);
+			path = RDHTTPTests;
+			sourceTree = "<group>";
+		};
+		E63D8906148141F000F15E16 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				E63D8907148141F000F15E16 /* RDHTTPTests-Info.plist */,
+				E63D8908148141F000F15E16 /* InfoPlist.strings */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E63D88E2148141F000F15E16 /* RDHTTP */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E63D8910148141F000F15E16 /* Build configuration list for PBXNativeTarget "RDHTTP" */;
+			buildPhases = (
+				E63D88DF148141F000F15E16 /* Sources */,
+				E63D88E0148141F000F15E16 /* Frameworks */,
+				E63D88E1148141F000F15E16 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RDHTTP;
+			productName = RDHTTP;
+			productReference = E63D88E3148141F000F15E16 /* RDHTTP.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E63D88FD148141F000F15E16 /* RDHTTPTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E63D8913148141F000F15E16 /* Build configuration list for PBXNativeTarget "RDHTTPTests" */;
+			buildPhases = (
+				E63D88F9148141F000F15E16 /* Sources */,
+				E63D88FA148141F000F15E16 /* Frameworks */,
+				E63D88FB148141F000F15E16 /* Resources */,
+				E63D88FC148141F000F15E16 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E63D8904148141F000F15E16 /* PBXTargetDependency */,
+			);
+			name = RDHTTPTests;
+			productName = RDHTTPTests;
+			productReference = E63D88FE148141F000F15E16 /* RDHTTPTests.octest */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E63D88DA148141F000F15E16 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0420;
+				ORGANIZATIONNAME = Readdle;
+			};
+			buildConfigurationList = E63D88DD148141F000F15E16 /* Build configuration list for PBXProject "RDHTTP" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = E63D88D8148141F000F15E16;
+			productRefGroup = E63D88E4148141F000F15E16 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E63D88E2148141F000F15E16 /* RDHTTP */,
+				E63D88FD148141F000F15E16 /* RDHTTPTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E63D88E1148141F000F15E16 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E63D88F2148141F000F15E16 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E63D88FB148141F000F15E16 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E63D890A148141F000F15E16 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E63D88FC148141F000F15E16 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E63D88DF148141F000F15E16 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E63D88F4148141F000F15E16 /* main.m in Sources */,
+				E63D88F8148141F000F15E16 /* RDHTTPAppDelegate.m in Sources */,
+				E63D89181481422D00F15E16 /* RDHTTP.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E63D88F9148141F000F15E16 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E63D890D148141F000F15E16 /* RDHTTPTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E63D8904148141F000F15E16 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E63D88E2148141F000F15E16 /* RDHTTP */;
+			targetProxy = E63D8903148141F000F15E16 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		E63D88F0148141F000F15E16 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E63D88F1148141F000F15E16 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		E63D8908148141F000F15E16 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E63D8909148141F000F15E16 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		E63D890E148141F000F15E16 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E63D890F148141F000F15E16 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		E63D8911148141F000F15E16 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "RDHTTP/RDHTTP-Prefix.pch";
+				INFOPLIST_FILE = "RDHTTP/RDHTTP-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		E63D8912148141F000F15E16 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "RDHTTP/RDHTTP-Prefix.pch";
+				INFOPLIST_FILE = "RDHTTP/RDHTTP-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		E63D8914148141F000F15E16 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/RDHTTP.app/RDHTTP";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(DEVELOPER_LIBRARY_DIR)/Frameworks",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "RDHTTP/RDHTTP-Prefix.pch";
+				INFOPLIST_FILE = "RDHTTPTests/RDHTTPTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = octest;
+			};
+			name = Debug;
+		};
+		E63D8915148141F000F15E16 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/RDHTTP.app/RDHTTP";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(DEVELOPER_LIBRARY_DIR)/Frameworks",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "RDHTTP/RDHTTP-Prefix.pch";
+				INFOPLIST_FILE = "RDHTTPTests/RDHTTPTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = octest;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E63D88DD148141F000F15E16 /* Build configuration list for PBXProject "RDHTTP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E63D890E148141F000F15E16 /* Debug */,
+				E63D890F148141F000F15E16 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E63D8910148141F000F15E16 /* Build configuration list for PBXNativeTarget "RDHTTP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E63D8911148141F000F15E16 /* Debug */,
+				E63D8912148141F000F15E16 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E63D8913148141F000F15E16 /* Build configuration list for PBXNativeTarget "RDHTTPTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E63D8914148141F000F15E16 /* Debug */,
+				E63D8915148141F000F15E16 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E63D88DA148141F000F15E16 /* Project object */;
+}
