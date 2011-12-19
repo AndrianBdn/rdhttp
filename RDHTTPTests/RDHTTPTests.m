@@ -88,9 +88,87 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     STAssertEqualObjects(responseText, @"a=>1\nb=>2\n", @"but it is not");
 }
 
-//- (void)testExample
-//{
-//    //STFail(@"Unit tests are not implemented yet in RDHTTPTests");
-//}
+
+- (void)testBasicAuthHTTPGet {
+    
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://browserspy.dk/password-ok.php"];
+    __block NSString *responseText = nil;
+    
+    [request setHTTPAuthHandler:^(rdhttp_httpauth_result_block_t auth_result) {
+        auth_result(@"test", @"test", nil);
+    }];
+    
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        if (response.error == nil) {
+            responseText = [response.responseText copy];
+        }
+        else 
+            NSLog(@"response error %@", response.error);
+        
+        operationComplete = YES;
+        
+    }];
+    
+
+    STAssertTrue([self waitWithTimeout:5.0], @"wait timeout");
+    BOOL ok = responseText && [responseText rangeOfString:@"HTTP Password Information - Success"].location != NSNotFound;
+    STAssertTrue(ok, @"No success indicator in password test");
+    
+}
+
+- (void)testBasicAuthHTTPGetFAIL {
+    
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://browserspy.dk/password-ok.php"];
+    __block NSString *responseText = nil;
+    
+    [request setHTTPAuthHandler:^(rdhttp_httpauth_result_block_t auth_result) {
+        auth_result(@"test", @"crap", nil);
+    }];
+    
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        if (response.error == nil) {
+            responseText = [response.responseText copy];
+        }
+        else 
+            NSLog(@"response error %@", response.error);
+        
+        operationComplete = YES;
+        
+    }];
+    
+    
+    STAssertTrue([self waitWithTimeout:10.0], @"wait timeout");
+    BOOL ok = responseText && [responseText rangeOfString:@"HTTP Password Information - Success"].location != NSNotFound;
+    STAssertFalse(ok, @"Success indicator in FAIL password test");
+    
+}
+
+- (void)testSelfSignedHTTPSGet {
+    
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"https://www.pcwebshop.co.uk/"];
+    __block NSString *responseText = nil;
+    
+    [request setSSLCertificateTrustHandler:^(NSURL *url, rdhttp_trustssl_result_block_t trust_result) {
+        trust_result(YES);
+    }];     
+     
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        if (response.error == nil) {
+            responseText = [response.responseText copy];
+        }
+        else 
+            NSLog(@"response error %@", response.error);
+        
+        operationComplete = YES;
+    }];
+    
+    
+    STAssertTrue([self waitWithTimeout:5.0], @"wait timeout");
+    BOOL ok = [responseText rangeOfString:@"You see this page because there is no Web site at this address."].location != NSNotFound;
+    STAssertTrue(ok, @"No success indicator in password test");
+    
+}
+
+
 
 @end

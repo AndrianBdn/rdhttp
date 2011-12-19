@@ -10,9 +10,34 @@
 
 NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain";
 
+
+#pragma mark - RDHTTP Private API 
+
 @interface RDHTTPRequest(RDHTTPPrivate)
 - (NSURLRequest *)_nsurlrequest;
 @end
+
+@interface RDHTTPFormPost(RDHTTPPrivate) 
+- (void)buildPostBodyForRequest:(RDHTTPRequest *)request;
+@end
+
+@interface RDHTTPConnection(RDHTTPRequestInterface)
+
+- (id)initWithRequest:(RDHTTPRequest *)aRequest
+    completionHandler:(rdhttp_block_t)aCompletionBlock 
+      progressHandler:(rdhttp_progress_block_t)aProgressBlock
+       headersHandler:(rdhttp_block_t)aHeadersBlock;
+
+- (void)start;
+
+@end
+
+
+
+
+
+#pragma mark - RDHTTPResponse
+
 
 @interface RDHTTPResponse() {
     NSHTTPURLResponse *response;
@@ -131,20 +156,11 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 @interface RDHTTPRequest() {
     NSMutableURLRequest *urlRequest;
+    rdhttp_trustssl_block_t trustBlock;
+    rdhttp_httpauth_block_t authBlock;
 }
 - (id)initWithMethod:(NSString *)aMethod resource:(NSObject *)urlObject;
-- (RDHTTPFormPost *)_formPostNoAutocreate;
-
-@end
-
-@interface RDHTTPConnection(RDHTTPRequestInterface)
-
-- (id)initWithRequest:(RDHTTPRequest *)aRequest
-    completionHandler:(rdhttp_block_t)aCompletionBlock 
-      progressHandler:(rdhttp_progress_block_t)aProgressBlock
-       headersHandler:(rdhttp_block_t)aHeadersBlock;
-
-- (void)start;
+- (void)prepare;
 
 @end
 
@@ -203,6 +219,9 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [userInfoCopy release];
     request.saveResponseToFile = saveResponseToFile;
     
+    [request setSSLCertificateTrustHandler:trustBlock];
+    [request setHTTPAuthHandler:authBlock];
+    
     return request;
 }
 
@@ -242,6 +261,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (void)setHTTPBodyData:(NSData *)data {
     [self setHTTPBodyStream:[NSInputStream inputStreamWithData:data]];
+    [self addValue:[NSString stringWithFormat:@"%u", [data length]] forHTTPHeaderField:@"Content-Length"];
 }
 
 - (void)setHTTPBodyFilePath:(NSString *)filePath {
@@ -250,6 +270,31 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         return;
     }
     [self setHTTPBodyStream:[NSInputStream inputStreamWithFileAtPath:filePath]];
+}
+
+
+- (rdhttp_trustssl_block_t)SSLCertificateTrustHandler {
+    return trustBlock;
+}
+
+- (void)setSSLCertificateTrustHandler:(rdhttp_trustssl_block_t)aTrustBlock {
+    if (trustBlock)
+        Block_release(trustBlock);
+    if (aTrustBlock)
+        trustBlock = Block_copy(aTrustBlock);
+}
+
+
+- (rdhttp_httpauth_block_t)HTTPAuthHandler {
+    return authBlock;
+}
+
+- (void)setHTTPAuthHandler:(rdhttp_httpauth_block_t)anAuthBlock {
+    if (authBlock) 
+        Block_release(authBlock);
+    
+    if (anAuthBlock)
+        authBlock = Block_copy(anAuthBlock);
 }
 
 
@@ -262,11 +307,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     }
     return formPost;
 }
-
-- (RDHTTPFormPost *)_formPostNoAutocreate {
-    return formPost;
-}
-
 
 - (void)setDispatchQueue:(dispatch_queue_t)aDispatchQueue {
     if (dispatchQueue == aDispatchQueue)
@@ -315,7 +355,17 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return [NSString stringWithFormat:@"<RDHTTPRequest: %@ %@>", urlRequest.HTTPMethod, urlRequest.URL];
 }
 
+#pragma mark - internal
+
+- (void)prepare {
+    [formPost buildPostBodyForRequest:self];
+}
+
 @end
+
+
+
+
 
 #pragma mark - RDHTTPFormPost -
 
@@ -323,7 +373,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     NSMutableDictionary *postFields;
     NSMutableDictionary *multipartPostFiles;   
 }
-- (void)buildPostBodyForRequest:(RDHTTPRequest *)request;
 @end
 
 @implementation RDHTTPFormPost
@@ -414,6 +463,12 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @end
 
 
+
+
+
+
+
+
 #pragma mark - RDHTTP -
 
 @interface RDHTTPConnection()<NSURLConnectionDataDelegate, NSURLConnectionDelegate> {
@@ -422,8 +477,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     rdhttp_block_t              completionBlock;
     rdhttp_progress_block_t     progressBlock;
     rdhttp_block_t              headersBlock;
-    
-    
     
     NSURLConnection     *connection;
     long long           httpExpectedContentLength;
@@ -448,8 +501,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         completionBlock = [aCompletionBlock copy];
         progressBlock = [aProgressBlock copy];
         headersBlock = [aHeadersBlock copy];
-        
-        [[request _formPostNoAutocreate] buildPostBodyForRequest:request];
     }
     return self;
 }
@@ -469,6 +520,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (void)start {
     NSAssert(connection == nil, @"RDHTTPConnection: someone called -(void)start twice");
+    [request prepare];
+    
     connection = [[NSURLConnection alloc] initWithRequest:[request _nsurlrequest]
                                                  delegate:self
                                          startImmediately:YES];
@@ -499,7 +552,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     httpExpectedContentLength = [httpResponse expectedContentLength];
     
     if (request.saveResponseToFile) {
-        // TODO: saev Response To File        
+        // TODO: save Response To File        
     }
     else {
         NSUInteger dataCapacity = 8192;
@@ -578,6 +631,71 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     completed = YES;
     [self didChangeValueForKey:@"completed"];
 }
+
+
+- (BOOL)connection:(NSURLConnection *)connection canAuthenticateAgainstProtectionSpace:(NSURLProtectionSpace *)protectionSpace {	
+	return YES;
+}
+
+
+- (BOOL)connectionShouldUseCredentialStorage:(NSURLConnection *)connection {
+	return YES;
+}
+
+- (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {
+    
+    if ([challenge.protectionSpace.authenticationMethod isEqualToString:@"NSURLAuthenticationMethodServerTrust"]) {
+        // certificate trust
+        rdhttp_trustssl_block_t trust = [request SSLCertificateTrustHandler];
+        if (trust == nil) {
+            [[challenge sender] continueWithoutCredentialForAuthenticationChallenge:challenge];
+            return;
+        }
+        
+        rdhttp_trustssl_result_block_t trustResult = ^(BOOL shouldConnect) {
+            if (shouldConnect) {
+                [[challenge sender] useCredential:[NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust] 
+                     forAuthenticationChallenge:challenge];
+            }
+            else {
+                [[challenge sender] continueWithoutCredentialForAuthenticationChallenge:challenge];
+            }
+        };
+        
+        trust([request _nsurlrequest].URL, trustResult);
+        return;
+    }
+    
+    // normal login-password auth: 
+    
+    const int kAllowedLoginFailures = 1;
+    rdhttp_httpauth_block_t auth = [request HTTPAuthHandler];
+    if ((auth == nil)||([challenge previousFailureCount] >= kAllowedLoginFailures)) {
+        [[challenge sender] cancelAuthenticationChallenge:challenge];
+        return;
+    }
+    
+    rdhttp_httpauth_result_block_t authResult = ^(NSString *username, NSString *password, NSString *domain) {
+        
+        [[challenge sender] useCredential:[NSURLCredential credentialWithUser:username
+                                                                     password:password
+                                                                  persistence:NSURLCredentialPersistenceNone]
+
+               forAuthenticationChallenge:challenge];
+    
+        
+    };
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        auth(authResult);
+    });
+    
+}
+
+
+
+
+
 
 
 @end

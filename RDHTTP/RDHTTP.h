@@ -11,37 +11,37 @@
 // ------------- RDHTTP Error Domain: 
 extern NSString *const RDHTTPResponseCodeErrorDomain;
 
-
+@class RDHTTPFormPost;
+@class RDHTTPConnection;
 @class RDHTTPResponse;
+
+
 // ------------- BLOCKS: regular response (errors inside RDHTTPResponse)
 typedef void (^rdhttp_block_t)(RDHTTPResponse *response);
 //                       progress response 
 typedef void (^rdhttp_progress_block_t)(float progress, BOOL upload);
-
-
-
-// -------------  RDHTTPResponse
-@interface RDHTTPResponse : NSObject
-- (NSString *)valueForHTTPHeaderField:(NSString *)field;
-@property(nonatomic, readonly) NSDictionary *userInfo;
-@property(nonatomic, readonly) NSError  *httpError;
-@property(nonatomic, readonly) NSError  *networkError;
-@property(nonatomic, readonly) NSError  *error;
-@property(nonatomic, readonly) NSString *responseText;
-@property(nonatomic, readonly) NSData   *responseData;
-@end
+//
+typedef void (^rdhttp_trustssl_result_block_t)(BOOL shouldConnect);
+// 
+typedef void (^rdhttp_trustssl_block_t)(NSURL *url, rdhttp_trustssl_result_block_t trustssl_result);
+//
+typedef void (^rdhttp_httpauth_result_block_t)(NSString *username, NSString *password, NSString *domain);
+// 
+typedef void (^rdhttp_httpauth_block_t)(rdhttp_httpauth_result_block_t auth_result);
+//
 
 
 
 // ------------- RDHTTPRequest 
-@class RDHTTPFormPost;
-@class RDHTTPConnection;
 
 @interface RDHTTPRequest : NSObject
 @property(nonatomic, retain) NSDictionary       *userInfo;
 @property(nonatomic, retain) RDHTTPFormPost     *formPost;
 @property(nonatomic, assign) dispatch_queue_t   dispatchQueue;
 @property(nonatomic, assign) BOOL               saveResponseToFile;
+
+@property(nonatomic, copy)  rdhttp_httpauth_block_t HTTPAuthHandler;
+@property(nonatomic, copy)  rdhttp_trustssl_block_t SSLCertificateTrustHandler;
 
 + (id)getRequestWithURL:(NSObject *)url;
 + (id)postRequestWithURL:(NSObject *)url;
@@ -63,6 +63,23 @@ typedef void (^rdhttp_progress_block_t)(float progress, BOOL upload);
                                   headersHandler:(rdhttp_block_t)aHeadersBlock;
 
 @end
+
+
+
+
+
+
+// -------------  RDHTTPResponse
+@interface RDHTTPResponse : NSObject
+- (NSString *)valueForHTTPHeaderField:(NSString *)field;
+@property(nonatomic, readonly) NSDictionary *userInfo;
+@property(nonatomic, readonly) NSError  *httpError;
+@property(nonatomic, readonly) NSError  *networkError;
+@property(nonatomic, readonly) NSError  *error;
+@property(nonatomic, readonly) NSString *responseText;
+@property(nonatomic, readonly) NSData   *responseData;
+@end
+
 
 
 // ------------- RDHTTPConnection 
