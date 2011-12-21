@@ -1,12 +1,34 @@
 //
 //  RDHTTP.m
-//  GetAdhoc
 //
-//  Created by Andrian Budantsov on 27.10.11.
-//  Copyright (c) 2011 Readdle. All rights reserved.
+//  Copyright (c) 2011, Andrian Budantsov. All rights reserved.
 //
+//  Redistribution and use in source and binary forms, with or without 
+//  modification, are permitted provided that the following conditions are met:
+//
+//  * Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//
+//  * Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation 
+//  and/or other materials provided with the distribution.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+//  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+//  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+//  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+//           SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+//  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+//  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+//  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #import "RDHTTP.h"
+#if TARGET_OS_IPHONE
+#import <MobileCoreServices/MobileCoreServices.h>
+#endif
 
 NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain";
 
@@ -18,15 +40,12 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @end
 
 @interface RDHTTPFormPost(RDHTTPPrivate) 
-- (void)buildPostBodyForRequest:(RDHTTPRequest *)request;
+- (void)setupPostFormRequest:(NSMutableURLRequest *)request encoding:(NSStringEncoding)encoding;
 @end
 
 @interface RDHTTPConnection(RDHTTPRequestInterface)
 
-- (id)initWithRequest:(RDHTTPRequest *)aRequest
-    completionHandler:(rdhttp_block_t)aCompletionBlock 
-      progressHandler:(rdhttp_progress_block_t)aProgressBlock
-       headersHandler:(rdhttp_block_t)aHeadersBlock;
+- (id)initWithRequest:(RDHTTPRequest *)aRequest;
 
 - (void)start;
 
@@ -156,12 +175,11 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 @interface RDHTTPRequest() {
     NSMutableURLRequest *urlRequest;
-    rdhttp_trustssl_block_t trustBlock;
-    rdhttp_httpauth_block_t authBlock;
+    rdhttp_block_t completionBlock;
 }
 - (id)initWithMethod:(NSString *)aMethod resource:(NSObject *)urlObject;
 - (void)prepare;
-
+- (rdhttp_block_t)completionBlock;
 @end
 
 
@@ -170,6 +188,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize dispatchQueue;
 @synthesize formPost;
 @synthesize saveResponseToFile;
+@synthesize encoding;
 
 - (id)initWithMethod:(NSString *)aMethod resource:(NSObject *)urlObject {
     self = [super init];
@@ -193,6 +212,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
             [urlRequest setHTTPMethod:aMethod];
 
         self.dispatchQueue = dispatch_get_main_queue();
+        encoding = NSUTF8StringEncoding;
     }
     return self;
 }
@@ -207,9 +227,14 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     RDHTTPRequest *request = [[RDHTTPRequest alloc] init];
     
     request->urlRequest = [urlRequest copyWithZone:zone];
+    if (completionBlock)
+        request->completionBlock = Block_copy(completionBlock);
+    
+    request.encoding = self.encoding;
     request.dispatchQueue = self.dispatchQueue;
 
     // don't use self.formPost here, because it will just create new formPost
+    // in case we don't have any 
     RDHTTPFormPost *formPostCopy = [formPost copyWithZone:zone];
     request.formPost = formPostCopy;
     [formPostCopy release];
@@ -219,8 +244,11 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [userInfoCopy release];
     request.saveResponseToFile = saveResponseToFile;
     
-    [request setSSLCertificateTrustHandler:trustBlock];
-    [request setHTTPAuthHandler:authBlock];
+    
+    [request setSSLCertificateTrustHandler:self.SSLCertificateTrustHandler];
+    [request setHTTPAuthHandler:self.HTTPAuthHandler];
+    [request setProgressHandler:self.progressHandler];
+    [request setHeadersHandler:self.headersHandler];
     
     return request;
 }
@@ -272,32 +300,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [self setHTTPBodyStream:[NSInputStream inputStreamWithFileAtPath:filePath]];
 }
 
-
-- (rdhttp_trustssl_block_t)SSLCertificateTrustHandler {
-    return trustBlock;
-}
-
-- (void)setSSLCertificateTrustHandler:(rdhttp_trustssl_block_t)aTrustBlock {
-    if (trustBlock)
-        Block_release(trustBlock);
-    if (aTrustBlock)
-        trustBlock = Block_copy(aTrustBlock);
-}
-
-
-- (rdhttp_httpauth_block_t)HTTPAuthHandler {
-    return authBlock;
-}
-
-- (void)setHTTPAuthHandler:(rdhttp_httpauth_block_t)anAuthBlock {
-    if (authBlock) 
-        Block_release(authBlock);
-    
-    if (anAuthBlock)
-        authBlock = Block_copy(anAuthBlock);
-}
-
-
 - (RDHTTPFormPost *)formPost {
     if ([urlRequest.HTTPMethod isEqualToString:@"GET"]) {
         NSLog(@"RDHTTP: warning using formPost with GET HTTP request");
@@ -322,60 +324,82 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     dispatchQueue = aDispatchQueue;
 }
 
-
-- (RDHTTPConnection *)startWithCompletionHandler:(rdhttp_block_t)aCompletionBlock
-                                 progressHandler:(rdhttp_progress_block_t)aProgressBlock
-                                  headersHandler:(rdhttp_block_t)aHeadersBlock 
-{
-    RDHTTPConnection *conn = [[RDHTTPConnection alloc] initWithRequest:self
-                                                     completionHandler:aCompletionBlock
-                                                       progressHandler:aProgressBlock
-                                                        headersHandler:aHeadersBlock];
-    [conn start];
-    return [conn autorelease];
-}
-
-
-- (RDHTTPConnection *)startWithCompletionHandler:(rdhttp_block_t)aCompletionBlock
-                                 progressHandler:(rdhttp_progress_block_t)aProgressBlock 
-{
-    return [self startWithCompletionHandler:aCompletionBlock 
-                            progressHandler:aProgressBlock
-                             headersHandler:nil];    
+- (rdhttp_block_t)completionBlock {
+    return completionBlock;
 }
 
 - (RDHTTPConnection *)startWithCompletionHandler:(rdhttp_block_t)aCompletionBlock {
-    return [self startWithCompletionHandler:aCompletionBlock 
-                            progressHandler:nil
-                             headersHandler:nil];
+    if (aCompletionBlock)
+        completionBlock = Block_copy(aCompletionBlock);
     
+    RDHTTPConnection *conn = [[RDHTTPConnection alloc] initWithRequest:self];
+    [conn start];
+    return [conn autorelease];
 }
 
 - (NSString *)description {
     return [NSString stringWithFormat:@"<RDHTTPRequest: %@ %@>", urlRequest.HTTPMethod, urlRequest.URL];
 }
 
+#pragma mark - properties 
+@synthesize headersHandler;
+@synthesize progressHandler;
+@synthesize SSLCertificateTrustHandler;
+@synthesize HTTPAuthHandler;
+
+
 #pragma mark - internal
 
 - (void)prepare {
-    [formPost buildPostBodyForRequest:self];
+    [formPost setupPostFormRequest:urlRequest encoding:encoding];
 }
 
 @end
-
-
 
 
 
 #pragma mark - RDHTTPFormPost -
 
-@interface RDHTTPFormPost() {
-    NSMutableDictionary *postFields;
-    NSMutableDictionary *multipartPostFiles;   
+@interface RDHTTPMultipartPostStream : NSInputStream {
+    NSString            *contentBoundary;
+    NSUInteger          multipartBodyLength;
+    NSMutableArray      *multipartDataArray;
+    
+    NSUInteger          currentBufferIndex;
+    NSUInteger          currentBufferPosition;
+    NSData              *currentFileData;
+    NSURL               *currentFileDataURL;
+    
+    NSStreamStatus      streamStatus;
 }
+
+- (id)initWithPostFields:(NSDictionary *)postFields
+     multipartPostFields:(NSDictionary *)multipartPostFields
+                encoding:(NSStringEncoding)encoding;
+
+@property(nonatomic, readonly) NSUInteger multipartBodyLength;
+@property(nonatomic, readonly) NSString   *contentBoundary;
+
+@end
+
+
+@interface RDHTTPFormPost() {
+    // user storage
+    NSMutableDictionary *postFields;
+    NSMutableDictionary *multipartPostFiles;
+}
+
+- (NSData *)formURLEncodedBodyWithEncoding:(NSStringEncoding)encoding;
 @end
 
 @implementation RDHTTPFormPost
+
+- (void)dealloc
+{
+    [postFields release];
+    [multipartPostFiles release];    
+    [super dealloc];
+}
 
 - (id)copyWithZone:(NSZone *)zone {
     RDHTTPFormPost *copy = [RDHTTPFormPost new];
@@ -391,16 +415,21 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [postFields setObject:value forKey:key];
 }
 
-- (void)setFile:(NSString *)filePath forKey:(NSString *)key {
-    if ([[NSFileManager defaultManager] fileExistsAtPath:filePath] == NO) {
-        NSLog(@"RDHTTP: not-existing file %@ in RDHTTPFormPost setFile", filePath);
+- (void)setFile:(NSURL *)fileURL forKey:(NSString *)key {
+    if ([fileURL isFileURL] == NO) {
+        NSLog(@"RDHTTP: setFile accepts only file URLs");
+        return;
+    }
+    
+    if ([[NSFileManager defaultManager] fileExistsAtPath:[fileURL path]] == NO) {
+        NSLog(@"RDHTTP: not-existing file %@ in RDHTTPFormPost setFile", fileURL);
         return;
     }
     
     if (multipartPostFiles == nil) 
         multipartPostFiles = [NSMutableDictionary new];
     
-    [multipartPostFiles setObject:filePath forKey:key];
+    [multipartPostFiles setObject:fileURL forKey:key];
 }
 #pragma mark - internal
 
@@ -422,30 +451,76 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return [(__bridge_transfer NSData *)data autorelease];
 }
 
-- (void)buildPostBodyForRequest:(RDHTTPRequest *)request {
-    if (postFields == nil)
+- (void)setupPostFormRequest:(NSMutableURLRequest *)request encoding:(NSStringEncoding)encoding {
+    NSString *charset = (__bridge_transfer NSString *)CFStringConvertEncodingToIANACharSetName(CFStringConvertNSStringEncodingToEncoding(encoding));
+
+    if (multipartPostFiles) {
+        // multipart/form-data, stream
+        
+        RDHTTPMultipartPostStream *postStream;
+        
+        postStream = [[RDHTTPMultipartPostStream alloc] initWithPostFields:postFields
+                                                       multipartPostFields:multipartPostFiles
+                                                                  encoding:encoding];
+        
+        [request        addValue:[NSString stringWithFormat:@"%u", postStream.multipartBodyLength]
+              forHTTPHeaderField:@"Content-Length"];
+        
+        NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; charset=%@; boundary=%@", charset, postStream.contentBoundary];
+        [request addValue:contentType forHTTPHeaderField:@"Content-Type"];
+
+        [request setHTTPBodyStream:postStream];
+        [postStream release];
+        
         return;
-    
-    [request addValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+    }
+    else {
+        // x-www-form-urlencoded body, in memory 
+        if (postFields == nil)
+            return;
+
+        NSString *contentType = [NSString stringWithFormat:@"application/x-www-form-urlencoded; charset=%@", charset];
+        [request addValue:contentType forHTTPHeaderField:@"Content-Type"];
+        [request setHTTPBody:[self formURLEncodedBodyWithEncoding:NSUTF8StringEncoding]];
+    }
+}
+
+- (NSData *)formURLEncodedBodyWithEncoding:(NSStringEncoding)encoding {
     
     NSMutableData *data = [NSMutableData data];
     
     BOOL first = YES;
+    CFStringEncoding enc = CFStringConvertNSStringEncodingToEncoding(encoding);
+    
     for (NSString *key in postFields) {
         if (first == NO)
             [data appendBytes:"&" length:1];
         
-        [data appendData:[self dataByAddingPercentEscapesToString:key usingEncoding:kCFStringEncodingUTF8]];
+        [data appendData:[self dataByAddingPercentEscapesToString:key usingEncoding:enc]];
         [data appendBytes:"=" length:1];
         [data appendData:[self dataByAddingPercentEscapesToString:[postFields objectForKey:key]
-                                                    usingEncoding:kCFStringEncodingUTF8]];
+                                                    usingEncoding:enc]];
         first = NO;
     }
     
-    [request setHTTPBodyData:data];
+    return data;
 }
 
 #pragma mark - utilities 
+
++ (NSString *)guessContentTypeForURL:(NSURL *)fileURL defaultEncoding:(NSStringEncoding)encoding {
+    // no charset ; charset=... is currently added, encoding is unused
+
+    // Borrowed from http://stackoverflow.com/questions/2439020/wheres-the-iphone-mime-type-database
+    CFStringRef UTI = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (CFStringRef)[fileURL pathExtension], NULL);
+    CFStringRef MIMEType = UTTypeCopyPreferredTagWithClass (UTI, kUTTagClassMIMEType);
+    CFRelease(UTI);
+    if (!MIMEType) {
+        return @"application/octet-stream";
+    }
+    return [(__bridge_transfer NSString *)MIMEType autorelease];
+}
+
 
 + (NSString*)stringByAddingPercentEscapesToString:(NSString *)string
 {
@@ -463,6 +538,276 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @end
 
 
+@implementation RDHTTPMultipartPostStream
+@synthesize multipartBodyLength;
+@synthesize contentBoundary;
+
+- (id)initWithPostFields:(NSDictionary *)postFields
+     multipartPostFields:(NSDictionary *)multipartPostFiles
+                encoding:(NSStringEncoding)encoding 
+{
+    self = [super init];
+    if (self) {
+        streamStatus = NSStreamStatusNotOpen;
+        multipartDataArray = [NSMutableArray new];
+        
+        CFUUIDRef theUUID = CFUUIDCreate(NULL);
+        contentBoundary = (__bridge_transfer NSString *)CFUUIDCreateString(NULL, theUUID);
+        CFRelease(theUUID);
+        
+        NSMutableData *simpleFieldsData = [NSMutableData dataWithCapacity:1024];
+        
+        NSString *boundaryBegin = [NSString stringWithFormat:@"--%@\r\n", contentBoundary];
+        [simpleFieldsData appendData:[boundaryBegin dataUsingEncoding:encoding]];
+        
+        NSData *boundaryMiddle = [[NSString stringWithFormat:@"\r\n--%@\r\n", contentBoundary] dataUsingEncoding:encoding];
+        
+        BOOL first = YES;
+        for (NSString *key in postFields) {
+            if (first == NO) {
+                [simpleFieldsData appendData:boundaryMiddle];
+            }
+            
+            NSString *formData;
+            formData = [NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n%@", key, [postFields objectForKey:key]];
+            [simpleFieldsData appendData:[formData dataUsingEncoding:encoding]];
+            
+            first = NO;
+        }
+        
+        [multipartDataArray addObject:simpleFieldsData];
+        
+        for(NSString *key in multipartPostFiles) {
+            NSURL *fileURL = [multipartPostFiles objectForKey:key];
+            
+            if ([[NSFileManager defaultManager] fileExistsAtPath:[fileURL path]] == NO) {
+                NSLog(@"RDHTTP: no file %@ exists", fileURL);
+                continue;
+            }
+            
+            if (first == NO) {
+                [multipartDataArray addObject:boundaryMiddle];
+            }
+            
+            NSString *fileName = [fileURL lastPathComponent];
+            
+            NSMutableString *fileHeaders = [NSMutableString stringWithCapacity:256];
+            NSString *contentType = [RDHTTPFormPost guessContentTypeForURL:fileURL defaultEncoding:encoding];
+            
+            [fileHeaders appendFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"\r\n", key, fileName];
+            [fileHeaders appendFormat:@"Content-Type: %@\r\n\r\n", contentType];
+            
+            [multipartDataArray addObject:[fileHeaders dataUsingEncoding:encoding]];
+            [multipartDataArray addObject:fileURL];
+            first = NO;
+        }
+        
+        
+        NSString *boundaryEnd = [NSString stringWithFormat:@"\r\n--%@--\r\n", contentBoundary];
+        [multipartDataArray addObject:[boundaryEnd dataUsingEncoding:encoding]];
+        
+        
+        // calculate length
+        multipartBodyLength = 0;
+        for (NSObject *part in multipartDataArray) {
+            if ([part isKindOfClass:[NSData class]]) {
+                multipartBodyLength += [(NSData *)part length];
+                //NSLog(@"\n%@", [[[NSString alloc] initWithData:(NSData *)part encoding:NSUTF8StringEncoding] autorelease]);
+            }
+            else if ([part isKindOfClass:[NSURL class]]) {
+                //NSLog(@"\n%@", part);
+                
+                NSError *error = nil;
+                NSDictionary *dict = [[NSFileManager defaultManager] attributesOfItemAtPath:[(NSURL *)part path]
+                                                                                      error:&error];
+                
+                unsigned long long fileSize = [dict fileSize];
+                multipartBodyLength += (NSUInteger)fileSize;
+            }
+        }
+        
+    }
+    return self;
+}
+
+- (void)dealloc {
+    [multipartDataArray release];
+    [contentBoundary release];
+    [currentFileDataURL release];
+    [currentFileData release];
+
+    [super dealloc];
+}
+
+#pragma mark - input stream methods 
+
+- (NSInteger)read:(uint8_t *)buffer maxLength:(NSUInteger)len {
+    //NSLog(@"%s = %d", __func__, len);
+    
+    if ([self hasBytesAvailable] == NO)
+        return 0;
+    
+    streamStatus = NSStreamStatusReading;
+    
+    NSObject *currentPart = [multipartDataArray objectAtIndex:currentBufferIndex];
+    
+    NSData *data = nil;
+    if ([currentPart isKindOfClass:[NSData class]]) {
+        data = (NSData *)currentPart;
+    }
+    else if ([currentPart isKindOfClass:[NSURL class]]) {
+        NSURL *url = (NSURL *)currentPart;
+        
+        if ([url isEqual:currentFileDataURL] == NO) {
+            [currentFileDataURL release];
+            [currentFileData release];
+            
+            currentFileData = [[NSData alloc] initWithContentsOfMappedFile:[url path]];
+            currentFileDataURL = [url copy];
+        }
+        
+        data = currentFileData;
+    }
+    
+    if (len >= [data length] - currentBufferPosition) {
+        len = [data length] - currentBufferPosition;
+        
+        [data getBytes:buffer range:NSMakeRange(currentBufferPosition, len)];
+        currentBufferIndex++;
+        currentBufferPosition = 0;
+    }
+    else {
+        [data getBytes:buffer range:NSMakeRange(currentBufferPosition, len)];
+        currentBufferPosition += len;
+    }
+    
+    streamStatus = NSStreamStatusOpen;
+    return len;
+}
+
+- (BOOL)hasBytesAvailable {
+    return currentBufferIndex < [multipartDataArray count];
+}
+
+- (BOOL)getBuffer:(uint8_t **)buffer length:(NSUInteger *)len {
+    return NO;
+}
+
+- (void)open {
+    streamStatus = NSStreamStatusOpen;
+}
+
+- (void)close {
+    [multipartDataArray release];
+    multipartDataArray = nil;
+    streamStatus = NSStreamStatusClosed;
+}
+
+- (NSStreamStatus)streamStatus {
+    if (multipartDataArray && [self hasBytesAvailable] == NO)
+        return NSStreamStatusAtEnd;
+    
+    return streamStatus;
+}
+
+- (NSError *)streamError {
+    return nil;
+}
+
+- (void)scheduleInRunLoop:(NSRunLoop *)aRunLoop forMode:(NSString *)mode {
+    // Nothing to do here, because this stream does not implement a run loop to produce its data.
+}
+
+- (void)removeFromRunLoop:(NSRunLoop *)aRunLoop forMode:(NSString *)mode {
+    // Nothing to do here, because this stream does not implement a run loop to produce its data.
+}
+
+- (void) _scheduleInCFRunLoop: (CFRunLoopRef) inRunLoop forMode: (CFStringRef) inMode {
+    // Nothing to do here, because this stream does not implement a run loop to produce its data.
+}
+
+- (void) _unscheduleFromCFRunLoop:(CFRunLoopRef)inRunLoop forMode:(CFStringRef)inMode {
+    // Nothing to do here, because this stream does not implement a run loop to produce its data.
+}
+
+- (BOOL) _setCFClientFlags: (CFOptionFlags)inFlags
+                  callback: (CFReadStreamClientCallBack) inCallback
+                   context: (CFStreamClientContext *) inContext
+{
+    // Nothing to do here, because this stream does not implement a run loop to produce its data.
+    return NO;
+}
+
+@end
+
+
+
+
+
+
+
+
+
+
+#pragma mark - Challenge Decision Helper Objects - 
+
+@interface RDHTTPChallangeDecision() {
+@protected
+    NSURLAuthenticationChallenge *challenge;
+}
+- (id)initWithChallenge:(NSURLAuthenticationChallenge *)aChallenge;
+@end
+
+@implementation RDHTTPChallangeDecision
+- (id)initWithChallenge:(NSURLAuthenticationChallenge *)aChallenge {
+    self = [super init];
+    if (self) {
+        challenge = [aChallenge retain];
+    }
+    return self;
+}
+
+- (void)cancel {
+    [[challenge sender] continueWithoutCredentialForAuthenticationChallenge:challenge];
+}
+
+- (void)dealloc {
+    [challenge release];
+    [super dealloc];
+}
+@end
+
+
+@implementation RDHTTPAuthorizer
+
+- (void)continueWithUsername:(NSString *)username password:(NSString *)password {
+    
+    NSURLCredential *credential = [NSURLCredential credentialWithUser:username
+                                                             password:password
+                                                          persistence:NSURLCredentialPersistenceNone];
+
+    [[challenge sender] useCredential:credential
+           forAuthenticationChallenge:challenge];
+     
+}
+
+- (void)cancelAuthorization {
+    [[challenge sender] continueWithoutCredentialForAuthenticationChallenge:challenge];
+}
+
+@end
+
+@implementation RDHTTPSSLServerTrust
+
+- (void)trust {
+    [[challenge sender] useCredential:[NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust] 
+           forAuthenticationChallenge:challenge];
+}
+- (void)dontTrust {
+    [[challenge sender] cancelAuthenticationChallenge:challenge];
+}
+
+@end
 
 
 
@@ -474,9 +819,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @interface RDHTTPConnection()<NSURLConnectionDataDelegate, NSURLConnectionDelegate> {
     RDHTTPRequest       *request; // this object is mutable, we agreed to use our copy for non-mutable tasks only
     
-    rdhttp_block_t              completionBlock;
-    rdhttp_progress_block_t     progressBlock;
-    rdhttp_block_t              headersBlock;
+    BOOL                sendProgressUpdates;
     
     NSURLConnection     *connection;
     long long           httpExpectedContentLength;
@@ -490,26 +833,17 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @implementation RDHTTPConnection
 @synthesize completed;
 
-- (id)initWithRequest:(RDHTTPRequest *)aRequest
-    completionHandler:(rdhttp_block_t)aCompletionBlock 
-      progressHandler:(rdhttp_progress_block_t)aProgressBlock
-       headersHandler:(rdhttp_block_t)aHeadersBlock
-{
+- (id)initWithRequest:(RDHTTPRequest *)aRequest {
     self = [super init];
     if (self) {
         request = [aRequest copy];
-        completionBlock = [aCompletionBlock copy];
-        progressBlock = [aProgressBlock copy];
-        headersBlock = [aHeadersBlock copy];
+        sendProgressUpdates = YES;
     }
     return self;
 }
 
 - (void)dealloc {
     [request release];
-    [completionBlock release];
-    [progressBlock release];
-    [headersBlock release];    
     
     [httpResponse release];
     [httpResponseData release];
@@ -527,16 +861,24 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
                                          startImmediately:YES];
 }
 
+- (void)cancel {
+    [connection cancel];
+}
+
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
-    RDHTTPResponse *response = [[[RDHTTPResponse alloc] initWithResponse:nil
-                                                                 request:request
-                                                                   error:error
-                                                            tempFilePath:nil
-                                                                    data:nil] autorelease];
+    rdhttp_block_t completionBlock = request.completionBlock;
     
-    dispatch_async(request.dispatchQueue, ^{
-        completionBlock(response);
-    });
+    if (completionBlock) {    
+        RDHTTPResponse *response = [[[RDHTTPResponse alloc] initWithResponse:nil
+                                                                     request:request
+                                                                       error:error
+                                                                tempFilePath:nil
+                                                                        data:nil] autorelease];
+        
+        dispatch_async(request.dispatchQueue, ^{
+            completionBlock(response);
+        });
+    }
     
     [self willChangeValueForKey:@"completed"];
     completed = YES;
@@ -562,7 +904,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         httpResponseData = [[NSMutableData alloc] initWithCapacity:dataCapacity];
     }
     
-    if (headersBlock) {
+    if (request.headersHandler) {
         RDHTTPResponse *response = [[[RDHTTPResponse alloc] initWithResponse:httpResponse
                                                                      request:request
                                                                        error:nil
@@ -570,7 +912,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
                                                                         data:nil] autorelease];
         
         dispatch_async(request.dispatchQueue, ^{
-            headersBlock(response);
+            request.headersHandler(response, self);
         });
     }
     
@@ -586,15 +928,16 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     
     httpSavedDataLength += [data length];
     
-    if (progressBlock) {
+    if (request.progressHandler && sendProgressUpdates) {
+        rdhttp_progress_block_t progressBlock = request.progressHandler;
+        
         if (httpExpectedContentLength > 0) {
             float progress = (float)httpSavedDataLength  / (float)httpExpectedContentLength;
             dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(progress, NO); });
         }
         else {
             dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(-1.0f, NO); });
-            [progressBlock release];
-            progressBlock = nil;
+            sendProgressUpdates = NO;
         }
     }
 }
@@ -604,7 +947,9 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
          totalBytesWritten:(NSInteger)totalBytesWritten 
  totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite 
 {
-    if (progressBlock) {
+    if (request.progressHandler) {
+        rdhttp_progress_block_t progressBlock = request.progressHandler;
+        
         if (totalBytesExpectedToWrite > 0) {
             float progress = (float)totalBytesWritten  / (float)totalBytesExpectedToWrite;
             dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(progress, YES); });
@@ -612,7 +957,10 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     }
 }
 
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection {
+- (void)connectionDidFinishLoading:(NSURLConnection *)aConnection {
+    connection = nil;
+    rdhttp_block_t completionBlock = request.completionBlock;
+    
     if (completionBlock == nil)
         return;
     
@@ -643,53 +991,38 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {
-    
     if ([challenge.protectionSpace.authenticationMethod isEqualToString:@"NSURLAuthenticationMethodServerTrust"]) {
         // certificate trust
+        RDHTTPSSLServerTrust *serverTrust = [[RDHTTPSSLServerTrust alloc] initWithChallenge:challenge];
+        
         rdhttp_trustssl_block_t trust = [request SSLCertificateTrustHandler];
         if (trust == nil) {
-            [[challenge sender] continueWithoutCredentialForAuthenticationChallenge:challenge];
+            [serverTrust dontTrust];
+            [serverTrust release];
+            return;
+        }
+
+        trust(serverTrust);        
+        [serverTrust release];
+
+    }
+    else {
+        // normal login-password auth: 
+        const int kAllowedLoginFailures = 1;
+        RDHTTPAuthorizer *httpAuthorizer = [[RDHTTPAuthorizer alloc] initWithChallenge:challenge];
+        
+        rdhttp_httpauth_block_t auth = [request HTTPAuthHandler];
+        
+        if ((auth == nil)||([challenge previousFailureCount] >= kAllowedLoginFailures)) {
+            [httpAuthorizer cancelAuthorization];
+            [httpAuthorizer release];
             return;
         }
         
-        rdhttp_trustssl_result_block_t trustResult = ^(BOOL shouldConnect) {
-            if (shouldConnect) {
-                [[challenge sender] useCredential:[NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust] 
-                     forAuthenticationChallenge:challenge];
-            }
-            else {
-                [[challenge sender] continueWithoutCredentialForAuthenticationChallenge:challenge];
-            }
-        };
+        auth(httpAuthorizer);
         
-        trust([request _nsurlrequest].URL, trustResult);
-        return;
+        [httpAuthorizer release];
     }
-    
-    // normal login-password auth: 
-    
-    const int kAllowedLoginFailures = 1;
-    rdhttp_httpauth_block_t auth = [request HTTPAuthHandler];
-    if ((auth == nil)||([challenge previousFailureCount] >= kAllowedLoginFailures)) {
-        [[challenge sender] cancelAuthenticationChallenge:challenge];
-        return;
-    }
-    
-    rdhttp_httpauth_result_block_t authResult = ^(NSString *username, NSString *password, NSString *domain) {
-        
-        [[challenge sender] useCredential:[NSURLCredential credentialWithUser:username
-                                                                     password:password
-                                                                  persistence:NSURLCredentialPersistenceNone]
-
-               forAuthenticationChallenge:challenge];
-    
-        
-    };
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        auth(authResult);
-    });
-    
 }
 
 

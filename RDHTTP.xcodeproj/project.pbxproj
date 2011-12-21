@@ -19,6 +19,11 @@
 		E63D890A148141F000F15E16 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E63D8908148141F000F15E16 /* InfoPlist.strings */; };
 		E63D890D148141F000F15E16 /* RDHTTPTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E63D890C148141F000F15E16 /* RDHTTPTests.m */; };
 		E63D89181481422D00F15E16 /* RDHTTP.m in Sources */ = {isa = PBXBuildFile; fileRef = E63D89171481422D00F15E16 /* RDHTTP.m */; };
+		E6462FBF14A11052006D44AF /* IMG_0045.jpg in Resources */ = {isa = PBXBuildFile; fileRef = E6462FBE14A11052006D44AF /* IMG_0045.jpg */; };
+		E6AF240A14A2220700D1E01F /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E6AF240914A2220700D1E01F /* MobileCoreServices.framework */; };
+		E6AF240F14A229BB00D1E01F /* Earphones_UG.pdf in Resources */ = {isa = PBXBuildFile; fileRef = E6AF240E14A229BB00D1E01F /* Earphones_UG.pdf */; };
+		E6AF241114A2338700D1E01F /* cakephp-cakephp-2.0.3-0-gde5a4ea.zip in Resources */ = {isa = PBXBuildFile; fileRef = E6AF241014A2338700D1E01F /* cakephp-cakephp-2.0.3-0-gde5a4ea.zip */; };
+		E6B5DF0414A2977200650FE1 /* readme.markdown in Resources */ = {isa = PBXBuildFile; fileRef = E6B5DF0314A2977200650FE1 /* readme.markdown */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +55,11 @@
 		E63D890C148141F000F15E16 /* RDHTTPTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDHTTPTests.m; sourceTree = "<group>"; };
 		E63D89161481422D00F15E16 /* RDHTTP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RDHTTP.h; sourceTree = "<group>"; };
 		E63D89171481422D00F15E16 /* RDHTTP.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RDHTTP.m; sourceTree = "<group>"; };
+		E6462FBE14A11052006D44AF /* IMG_0045.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = IMG_0045.jpg; sourceTree = "<group>"; };
+		E6AF240914A2220700D1E01F /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
+		E6AF240E14A229BB00D1E01F /* Earphones_UG.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = Earphones_UG.pdf; sourceTree = "<group>"; };
+		E6AF241014A2338700D1E01F /* cakephp-cakephp-2.0.3-0-gde5a4ea.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = "cakephp-cakephp-2.0.3-0-gde5a4ea.zip"; sourceTree = "<group>"; };
+		E6B5DF0314A2977200650FE1 /* readme.markdown */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.markdown; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +67,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E6AF240A14A2220700D1E01F /* MobileCoreServices.framework in Frameworks */,
 				E63D88E8148141F000F15E16 /* UIKit.framework in Frameworks */,
 				E63D88EA148141F000F15E16 /* Foundation.framework in Frameworks */,
 				E63D88EC148141F000F15E16 /* CoreGraphics.framework in Frameworks */,
@@ -79,6 +90,7 @@
 		E63D88D8148141F000F15E16 = {
 			isa = PBXGroup;
 			children = (
+				E6B5DF0314A2977200650FE1 /* readme.markdown */,
 				E63D88ED148141F000F15E16 /* RDHTTP */,
 				E63D8905148141F000F15E16 /* RDHTTPTests */,
 				E63D88E6148141F000F15E16 /* Frameworks */,
@@ -98,6 +110,7 @@
 		E63D88E6148141F000F15E16 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E6AF240914A2220700D1E01F /* MobileCoreServices.framework */,
 				E63D88E7148141F000F15E16 /* UIKit.framework */,
 				E63D88E9148141F000F15E16 /* Foundation.framework */,
 				E63D88EB148141F000F15E16 /* CoreGraphics.framework */,
@@ -142,6 +155,9 @@
 		E63D8906148141F000F15E16 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				E6AF241014A2338700D1E01F /* cakephp-cakephp-2.0.3-0-gde5a4ea.zip */,
+				E6AF240E14A229BB00D1E01F /* Earphones_UG.pdf */,
+				E6462FBE14A11052006D44AF /* IMG_0045.jpg */,
 				E63D8907148141F000F15E16 /* RDHTTPTests-Info.plist */,
 				E63D8908148141F000F15E16 /* InfoPlist.strings */,
 			);
@@ -220,6 +236,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E63D88F2148141F000F15E16 /* InfoPlist.strings in Resources */,
+				E6B5DF0414A2977200650FE1 /* readme.markdown in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -228,6 +245,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				E63D890A148141F000F15E16 /* InfoPlist.strings in Resources */,
+				E6462FBF14A11052006D44AF /* IMG_0045.jpg in Resources */,
+				E6AF240F14A229BB00D1E01F /* Earphones_UG.pdf in Resources */,
+				E6AF241114A2338700D1E01F /* cakephp-cakephp-2.0.3-0-gde5a4ea.zip in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
