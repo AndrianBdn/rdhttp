@@ -1,5 +1,6 @@
 # RDHTTP 
-RDHTTP is HTTP client library for iOS. It is based on Apple's NSURLConnection but much easier to use and ready for real world tasks. 
+RDHTTP is HTTP client library for iOS. It is based on Apple's NSURLConnection but much easier to use and 
+ready for real world tasks. 
 
 The library was designed as a simple, self-contained solution (just RDHTTP.h and RDHTTP.m). 
 It is reasonably low-level and does not contain any features unrelated to HTTP (JSON, XML, SOAP, ...).
@@ -38,7 +39,7 @@ Currently the library is in development. Following tasks are active:
 
 ## Usage Example
 
-Simple HTTP get:
+Simple HTTP GET:
 
 ```objective-c
 RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/ok.html"];
