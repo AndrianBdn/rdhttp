@@ -9,11 +9,11 @@ It is reasonably low-level and does not contain any features unrelated to HTTP (
 Currently the library is in development. Following tasks are active: 
 
 * More unit tests 
-* Tested and good 'cancel' method
+* <del>Tested and good 'cancel' method</del>
 * RFC 2616 redirect behaviour
 * Generating basic authorizaion header
-* GCD / threading options
-* NSOperation methods
+* better GCD / threading options
+* <del>NSOperation methods</del>
 * Use library in production code for 100000+ users
 * Documentation
 
