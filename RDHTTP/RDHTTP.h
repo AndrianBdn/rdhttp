@@ -31,7 +31,7 @@
 extern NSString *const RDHTTPResponseCodeErrorDomain;
 
 @class RDHTTPFormPost;
-@class RDHTTPConnection;
+@class RDHTTPOperation;
 @class RDHTTPResponse;
 @class RDHTTPAuthorizer;
 @class RDHTTPSSLServerTrust;
@@ -39,7 +39,7 @@ extern NSString *const RDHTTPResponseCodeErrorDomain;
 // ------------- BLOCKS: regular response (errors inside RDHTTPResponse)
 typedef void (^rdhttp_block_t)(RDHTTPResponse *response);
 //                       progress response 
-typedef void (^rdhttp_header_block_t)(RDHTTPResponse *response, RDHTTPConnection *connection);
+typedef void (^rdhttp_header_block_t)(RDHTTPResponse *response, RDHTTPOperation *connection);
 //
 typedef void (^rdhttp_progress_block_t)(float progress, BOOL upload);
 //
@@ -59,6 +59,8 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property(nonatomic, assign) dispatch_queue_t   dispatchQueue;
 @property(nonatomic, assign) BOOL               saveResponseToFile;
 @property(nonatomic, assign) NSStringEncoding   encoding;
+@property(nonatomic, assign) BOOL               shouldUseRFC2616RedirectBehaviour;
+@property(nonatomic, assign) BOOL               cancelCausesCompletion;
 
 @property(nonatomic, copy)  rdhttp_httpauth_block_t HTTPAuthHandler;
 @property(nonatomic, copy)  rdhttp_trustssl_block_t SSLCertificateTrustHandler;
@@ -80,7 +82,10 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 - (void)setHTTPBodyStream:(NSInputStream *)inputStream;
 - (void)setHTTPBodyFilePath:(NSString *)filePath;
 
-- (RDHTTPConnection *)startWithCompletionHandler:(rdhttp_block_t)aCompletionBlock;
+- (RDHTTPOperation *)operationWithCompletionHandler:(rdhttp_block_t)aCompletionBlock;
+
+- (RDHTTPOperation *)startWithCompletionHandler:(rdhttp_block_t)aCompletionBlock;
+
 
 @end
 
@@ -92,12 +97,14 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 // -------------  RDHTTPResponse
 @interface RDHTTPResponse : NSObject
 - (NSString *)valueForHTTPHeaderField:(NSString *)field;
+@property(nonatomic, readonly) BOOL         isCancelled;
 @property(nonatomic, readonly) NSDictionary *userInfo;
 @property(nonatomic, readonly) NSError  *httpError;
 @property(nonatomic, readonly) NSError  *networkError;
 @property(nonatomic, readonly) NSError  *error;
 @property(nonatomic, readonly) NSString *responseText;
 @property(nonatomic, readonly) NSData   *responseData;
+
 @end
 
 
@@ -123,9 +130,10 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 
 
 // ------------- RDHTTPConnection 
-@interface RDHTTPConnection : NSObject
-@property(nonatomic, readonly)  BOOL    completed;
-- (void)cancel;
+@interface RDHTTPOperation : NSOperation
+@property (readonly) BOOL isExecuting;
+@property (readonly) BOOL isFinished;
+@property (readonly) BOOL isCancelled;
 @end
 
 

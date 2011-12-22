@@ -194,7 +194,34 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     STAssertTrue([self waitWithTimeout:55.0], @"wait timeout");
     STAssertEqualObjects(responseText, @"size:33464\nmd5:c9894d80c2d05b826fabe24283031fe6", @"but it is not");
+}
+
+
+- (void)testCancelMethod {
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://www.ubuntu.com/start-download?distro=desktop&bits=32&release=latest"];
     
+    __block BOOL isCancelled = NO;
+    
+    request.cancelCausesCompletion = YES;
+    
+    RDHTTPOperation *operation = [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        NSLog(@"cancelled operation response %@", response);
+    
+        isCancelled = [response isCancelled];
+        
+        operationComplete = YES;
+        
+    }];
+    
+    double delayInSeconds = 10.0;
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, delayInSeconds * NSEC_PER_SEC);
+    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        [operation cancel];
+        NSLog(@"cancel operation");
+    });
+    
+    STAssertTrue([self waitWithTimeout:25.0], @"wait timeout");
+    STAssertTrue(isCancelled, @"RDHTTP should be cancelled", @"but it is not");
     
 }
 

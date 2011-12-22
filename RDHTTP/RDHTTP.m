@@ -43,7 +43,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 - (void)setupPostFormRequest:(NSMutableURLRequest *)request encoding:(NSStringEncoding)encoding;
 @end
 
-@interface RDHTTPConnection(RDHTTPRequestInterface)
+@interface RDHTTPOperation(RDHTTPRequestInterface)
 
 - (id)initWithRequest:(RDHTTPRequest *)aRequest;
 
@@ -73,6 +73,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 - (id)initWithResponse:(NSHTTPURLResponse *)response 
                request:(RDHTTPRequest *)request
                  error:(NSError *)error
+           isCancelled:(BOOL)anIsCancelledFlag
           tempFilePath:(NSString *)tempFilePath
                   data:(NSData *)responseData;
 
@@ -83,10 +84,12 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize error;
 @synthesize userInfo;
 @synthesize responseData;
+@synthesize isCancelled;
 
 - (id)initWithResponse:(NSHTTPURLResponse *)aResponse 
                request:(RDHTTPRequest *)aRequest
                  error:(NSError *)anError
+           isCancelled:(BOOL)anIsCancelledFlag
           tempFilePath:(NSString *)aTempFilePath
                   data:(NSData *)aResponseData 
 {
@@ -97,6 +100,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         error = [anError retain];
         tempFilePath = [aTempFilePath retain];
         responseData = [aResponseData retain];
+        isCancelled = anIsCancelledFlag;
     }
     return self;
 }
@@ -189,6 +193,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize formPost;
 @synthesize saveResponseToFile;
 @synthesize encoding;
+@synthesize shouldUseRFC2616RedirectBehaviour;
+@synthesize cancelCausesCompletion;
 
 - (id)initWithMethod:(NSString *)aMethod resource:(NSObject *)urlObject {
     self = [super init];
@@ -243,7 +249,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     request.userInfo = userInfoCopy;
     [userInfoCopy release];
     request.saveResponseToFile = saveResponseToFile;
-    
+    request.cancelCausesCompletion = cancelCausesCompletion;
+    request.shouldUseRFC2616RedirectBehaviour = shouldUseRFC2616RedirectBehaviour;
     
     [request setSSLCertificateTrustHandler:self.SSLCertificateTrustHandler];
     [request setHTTPAuthHandler:self.HTTPAuthHandler];
@@ -328,13 +335,20 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return completionBlock;
 }
 
-- (RDHTTPConnection *)startWithCompletionHandler:(rdhttp_block_t)aCompletionBlock {
+- (RDHTTPOperation *)operationWithCompletionHandler:(rdhttp_block_t)aCompletionBlock {
     if (aCompletionBlock)
         completionBlock = Block_copy(aCompletionBlock);
     
-    RDHTTPConnection *conn = [[RDHTTPConnection alloc] initWithRequest:self];
-    [conn start];
+    RDHTTPOperation *conn = [[RDHTTPOperation alloc] initWithRequest:self];
     return [conn autorelease];
+    
+}
+
+
+- (RDHTTPOperation *)startWithCompletionHandler:(rdhttp_block_t)aCompletionBlock {
+    RDHTTPOperation *conn = [self operationWithCompletionHandler:aCompletionBlock];
+    [conn start];
+    return conn;
 }
 
 - (NSString *)description {
@@ -816,7 +830,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 #pragma mark - RDHTTP -
 
-@interface RDHTTPConnection()<NSURLConnectionDataDelegate, NSURLConnectionDelegate> {
+@interface RDHTTPOperation()<NSURLConnectionDataDelegate, NSURLConnectionDelegate> {
     RDHTTPRequest       *request; // this object is mutable, we agreed to use our copy for non-mutable tasks only
     
     BOOL                sendProgressUpdates;
@@ -825,13 +839,17 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     long long           httpExpectedContentLength;
     long long           httpSavedDataLength;
     NSHTTPURLResponse   *httpResponse;
-    NSMutableData       *httpResponseData;    
+    NSMutableData       *httpResponseData;
+    
+    
+    BOOL                isCancelled;
+    BOOL                isExecuting;
+    BOOL                isFinished;
 }
 
 @end
 
-@implementation RDHTTPConnection
-@synthesize completed;
+@implementation RDHTTPOperation
 
 - (id)initWithRequest:(RDHTTPRequest *)aRequest {
     self = [super init];
@@ -852,8 +870,25 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [super dealloc];
 }
 
+#pragma mark - Operation methods 
+@synthesize isExecuting;
+@synthesize isCancelled;
+@synthesize isFinished;
+
+- (BOOL)isConcurrent {
+    return YES;
+}
+
 - (void)start {
-    NSAssert(connection == nil, @"RDHTTPConnection: someone called -(void)start twice");
+    if ([self isCancelled]) {
+        return;
+    }
+    
+    [self willChangeValueForKey:@"isExecuting"];
+    isExecuting = YES;
+    [self didChangeValueForKey:@"isExecuting"];
+    
+    NSAssert(isExecuting && isFinished == NO, @"RDHTTPConnection: someone called -(void)start twice");
     [request prepare];
     
     connection = [[NSURLConnection alloc] initWithRequest:[request _nsurlrequest]
@@ -863,15 +898,40 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (void)cancel {
     [connection cancel];
+    connection = nil;
+    
+    [self willChangeValueForKey:@"isCancelled"];
+    isCancelled = YES;
+    [self didChangeValueForKey:@"isCancelled"];
+    
+    if (request.completionBlock == nil || request.cancelCausesCompletion == NO)
+        return;
+    
+    rdhttp_block_t completionBlock = request.completionBlock;
+    
+    RDHTTPResponse *response = [[RDHTTPResponse alloc] initWithResponse:nil
+                                                                request:request
+                                                                  error:nil
+                                                            isCancelled:YES
+                                                           tempFilePath:nil
+                                                                   data:nil];
+    [response autorelease];
+    
+    dispatch_async(request.dispatchQueue, ^{
+        completionBlock(response);
+    });
 }
+
+#pragma mark - NSURLConnection delegate / dataSource
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
     rdhttp_block_t completionBlock = request.completionBlock;
     
-    if (completionBlock) {    
+    if (completionBlock && [self isCancelled] == NO) {    
         RDHTTPResponse *response = [[[RDHTTPResponse alloc] initWithResponse:nil
                                                                      request:request
                                                                        error:error
+                                                                 isCancelled:NO
                                                                 tempFilePath:nil
                                                                         data:nil] autorelease];
         
@@ -880,15 +940,17 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         });
     }
     
-    [self willChangeValueForKey:@"completed"];
-    completed = YES;
-    [self didChangeValueForKey:@"completed"];
+    [self willChangeValueForKey:@"isExecuting"];
+    [self willChangeValueForKey:@"isFinished"];
+    isExecuting = NO;
+    isFinished = YES;
+    [self didChangeValueForKey:@"isExecuting"];
+    [self didChangeValueForKey:@"isFinished"];
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)aResponse {
-    if ([aResponse isKindOfClass:[NSHTTPURLResponse class]] == NO) {
-        // TODO: fail
-    }
+    
+    NSAssert([aResponse isKindOfClass:[NSHTTPURLResponse class]], @"NSURLConnection did not return NSHTTPURLResponse");
 
     httpResponse = [(NSHTTPURLResponse *)aResponse retain];
     httpExpectedContentLength = [httpResponse expectedContentLength];
@@ -904,10 +966,11 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         httpResponseData = [[NSMutableData alloc] initWithCapacity:dataCapacity];
     }
     
-    if (request.headersHandler) {
+    if (request.headersHandler && [self isCancelled] == NO) {
         RDHTTPResponse *response = [[[RDHTTPResponse alloc] initWithResponse:httpResponse
                                                                      request:request
                                                                        error:nil
+                                                                 isCancelled:NO
                                                                 tempFilePath:nil
                                                                         data:nil] autorelease];
         
@@ -961,12 +1024,13 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     connection = nil;
     rdhttp_block_t completionBlock = request.completionBlock;
     
-    if (completionBlock == nil)
+    if (completionBlock == nil || [self isCancelled])
         return;
     
     RDHTTPResponse *response = [[RDHTTPResponse alloc] initWithResponse:httpResponse
                                                                 request:request
                                                                   error:nil
+                                                            isCancelled:NO
                                                            tempFilePath:nil
                                                                    data:httpResponseData];
     [response autorelease];
@@ -975,9 +1039,12 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         completionBlock(response);
     });
     
-    [self willChangeValueForKey:@"completed"];
-    completed = YES;
-    [self didChangeValueForKey:@"completed"];
+    [self willChangeValueForKey:@"isExecuting"];
+    [self willChangeValueForKey:@"isFinished"];
+    isExecuting = NO;
+    isFinished = YES;
+    [self didChangeValueForKey:@"isExecuting"];
+    [self didChangeValueForKey:@"isFinished"];
 }
 
 
