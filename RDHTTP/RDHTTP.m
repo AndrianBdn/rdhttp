@@ -106,10 +106,12 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 }
 
 - (void)dealloc {
+    
     [request release];
     [response release];
     
     [error release];
+    [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
     [tempFilePath release];
     [responseData release];
     
@@ -161,7 +163,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (NSString *)description {
     return [NSString stringWithFormat:@"<RDHTTPResponse: URL %@ code %d length: %d>", 
-            [request _nsurlrequest].URL,
+            response.URL,
             response.statusCode, 
             [responseData length]];
 }
@@ -184,6 +186,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 - (id)initWithMethod:(NSString *)aMethod resource:(NSObject *)urlObject;
 - (void)prepare;
 - (rdhttp_block_t)completionBlock;
+- (NSString *)base64encodeString:(NSString *)string;
 @end
 
 
@@ -193,6 +196,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize formPost;
 @synthesize saveResponseToFile;
 @synthesize encoding;
+@synthesize shouldRedirect;
 @synthesize shouldUseRFC2616RedirectBehaviour;
 @synthesize cancelCausesCompletion;
 
@@ -219,6 +223,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
         self.dispatchQueue = dispatch_get_main_queue();
         encoding = NSUTF8StringEncoding;
+        shouldRedirect = YES;
     }
     return self;
 }
@@ -250,6 +255,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [userInfoCopy release];
     request.saveResponseToFile = saveResponseToFile;
     request.cancelCausesCompletion = cancelCausesCompletion;
+    request.shouldRedirect = shouldRedirect;
     request.shouldUseRFC2616RedirectBehaviour = shouldUseRFC2616RedirectBehaviour;
     
     [request setSSLCertificateTrustHandler:self.SSLCertificateTrustHandler];
@@ -278,6 +284,12 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (void)addValue:(NSString *)value forHTTPHeaderField:(NSString *)field {
     [urlRequest addValue:value forHTTPHeaderField:field];
+}
+
+- (void)tryBasicHTTPAuthorizationWithUsername:(NSString *)username password:(NSString *)password {
+    NSString *authString = [NSString stringWithFormat:@"%@:%@", username, password];
+    NSString *headerValue = [NSString stringWithFormat:@"Basic %@", [self base64encodeString:authString]];
+    [self addValue:headerValue forHTTPHeaderField:@"Authorization"];
 }
 
 - (void)setHTTPBodyStream:(NSInputStream *)inputStream {
@@ -363,6 +375,33 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 
 #pragma mark - internal
+
+- (NSString *)base64encodeString:(NSString *)string {
+    NSMutableString *response = [NSMutableString stringWithCapacity:string.length * 2];
+    static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    
+    static int mod_table[] = {0, 2, 1};
+    
+    NSData *stringData = [string dataUsingEncoding:encoding];
+    const char *data = [stringData bytes];
+    NSUInteger input_length = [stringData length];
+    
+    for(NSUInteger i=0; i<input_length;) {
+        uint32_t octet_a = i < input_length ? data[i++] : 0;
+        uint32_t octet_b = i < input_length ? data[i++] : 0;
+        uint32_t octet_c = i < input_length ? data[i++] : 0;
+        uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
+        [response appendFormat:@"%c", cb64[(triple >> 3 * 6) & 0x3F]];
+        [response appendFormat:@"%c", cb64[(triple >> 2 * 6) & 0x3F]];
+        [response appendFormat:@"%c", cb64[(triple >> 1 * 6) & 0x3F]];
+        [response appendFormat:@"%c", cb64[(triple >> 0 * 6) & 0x3F]];        
+    }
+    
+    for (int i = 0; i < mod_table[input_length % 3]; i++)
+        [response appendString:@"="];
+
+    return response;
+}
 
 - (void)prepare {
     [formPost setupPostFormRequest:urlRequest encoding:encoding];
@@ -833,6 +872,9 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @interface RDHTTPOperation()<NSURLConnectionDataDelegate, NSURLConnectionDelegate> {
     RDHTTPRequest       *request; // this object is mutable, we agreed to use our copy for non-mutable tasks only
     
+    NSString            *tempFilePath;
+    NSFileHandle        *tempFileHandle;
+    
     BOOL                sendProgressUpdates;
     
     NSURLConnection     *connection;
@@ -922,6 +964,18 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     });
 }
 
+- (void)prepareTempFile {
+    
+    CFUUIDRef theUUID = CFUUIDCreate(NULL);
+    NSString *tempUUID = (__bridge_transfer NSString *)CFUUIDCreateString(NULL, theUUID);
+    NSString *tempName = [NSString stringWithFormat:@"RDHTTP-%@", tempUUID];
+    [tempUUID release];
+    CFRelease(theUUID);
+
+    tempFilePath = [[NSTemporaryDirectory() stringByAppendingPathComponent:tempName] retain];
+    tempFileHandle = [[NSFileHandle fileHandleForWritingAtPath:tempFilePath] retain];
+}
+
 #pragma mark - NSURLConnection delegate / dataSource
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
@@ -932,12 +986,15 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
                                                                      request:request
                                                                        error:error
                                                                  isCancelled:NO
-                                                                tempFilePath:nil
+                                                                tempFilePath:tempFilePath
                                                                         data:nil] autorelease];
         
         dispatch_async(request.dispatchQueue, ^{
             completionBlock(response);
         });
+    }
+    else {
+        [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
     }
     
     [self willChangeValueForKey:@"isExecuting"];
@@ -956,7 +1013,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     httpExpectedContentLength = [httpResponse expectedContentLength];
     
     if (request.saveResponseToFile) {
-        // TODO: save Response To File        
+        [self prepareTempFile];        
     }
     else {
         NSUInteger dataCapacity = 8192;
@@ -971,7 +1028,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
                                                                      request:request
                                                                        error:nil
                                                                  isCancelled:NO
-                                                                tempFilePath:nil
+                                                                tempFilePath:nil // too earyly to pass tempFilePath, it is empty
                                                                         data:nil] autorelease];
         
         dispatch_async(request.dispatchQueue, ^{
@@ -986,7 +1043,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         [httpResponseData appendData:data];
     }
     else {
-        // TODO: file downloads 
+        [tempFileHandle writeData:data];
     }
     
     httpSavedDataLength += [data length];
@@ -1022,16 +1079,19 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)aConnection {
     connection = nil;
+    [tempFileHandle closeFile];
     rdhttp_block_t completionBlock = request.completionBlock;
     
-    if (completionBlock == nil || [self isCancelled])
+    if (completionBlock == nil || [self isCancelled]) {
+        [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
         return;
+    }
     
     RDHTTPResponse *response = [[RDHTTPResponse alloc] initWithResponse:httpResponse
                                                                 request:request
                                                                   error:nil
                                                             isCancelled:NO
-                                                           tempFilePath:nil
+                                                           tempFilePath:tempFilePath
                                                                    data:httpResponseData];
     [response autorelease];
     
@@ -1047,6 +1107,25 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [self didChangeValueForKey:@"isFinished"];
 }
 
+- (NSURLRequest *)connection:(NSURLConnection *)connection
+             willSendRequest:(NSURLRequest *)newURLRequest
+            redirectResponse:(NSURLResponse *)redirectResponse 
+{
+    if (redirectResponse == nil) // transforming to canonical form
+        return newURLRequest;
+    
+    if (request.shouldRedirect) {
+        if (request.shouldUseRFC2616RedirectBehaviour) {
+            NSMutableURLRequest *new2616request = [[[request _nsurlrequest] copy] autorelease];
+            [new2616request setURL:newURLRequest.URL];
+            return new2616request;
+        }
+        
+        return newURLRequest;
+    }
+    
+    return nil;
+}
 
 - (BOOL)connection:(NSURLConnection *)connection canAuthenticateAgainstProtectionSpace:(NSURLProtectionSpace *)protectionSpace {	
 	return YES;

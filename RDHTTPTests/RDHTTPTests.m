@@ -116,6 +116,32 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
 }
 
+- (void)testBasicAuthHTTPGetNoBlock {
+    
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://browserspy.dk/password-ok.php"];
+    __block NSString *responseText = nil;
+
+    [request tryBasicHTTPAuthorizationWithUsername:@"test" password:@"test"];
+    
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        if (response.error == nil) {
+            responseText = [response.responseText copy];
+        }
+        else 
+            NSLog(@"response error %@", response.error);
+        
+        operationComplete = YES;
+        
+    }];
+    
+    
+    STAssertTrue([self waitWithTimeout:5.0], @"wait timeout");
+    BOOL ok = responseText && [responseText rangeOfString:@"HTTP Password Information - Success"].location != NSNotFound;
+    STAssertTrue(ok, @"No success indicator in password test");
+    
+}
+
+
 - (void)testBasicAuthHTTPGetFAIL {
     
     RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://browserspy.dk/password-ok.php"];
@@ -272,8 +298,104 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     STAssertTrue([self waitWithTimeout:55.0], @"wait timeout");
     STAssertEqualObjects(responseText, refString, @"but it is not");
     
-    
 }
+
+
+- (void)testHTTPGetRedirect {
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/redirect1.php"];
+    __block NSString *responseText = nil;
+    
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        if (response.error == nil) {
+            responseText = [response.responseText copy];
+        }
+        else 
+            STFail(@"response error %@", response.error);
+        
+        operationComplete = YES;
+        
+    }];
+    
+    STAssertTrue([self waitWithTimeout:15.0], @"wait timeout");
+    STAssertEqualObjects(responseText, @"RDHTTP Is Working OK", @"but it is not");
+    
+    [responseText release];
+}
+
+- (void)testHTTPGetRedirectNO {
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/redirect1.php"];
+    request.shouldRedirect = NO;
+    
+    __block NSString *responseText = nil;    
+    __block NSError *error = nil;
+    
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        responseText = [response.responseText copy];
+        error = [response.httpError copy];
+        operationComplete = YES;
+        
+    }];
+    
+    STAssertTrue([self waitWithTimeout:15.0], @"wait timeout");
+
+    NSLog(@"%@", responseText);
+    NSLog(@"redirect no = %@", error);
+
+    
+    STAssertTrue(error.code == 302, @"error code 302 redirect", @"but it is not");
+    
+    [responseText release];
+    [error release];
+}
+
+
+
+- (void)testHTTPRedirectLoop {
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/redirect-loop1.php"];
+   
+    __block NSString *responseText = nil;    
+    __block NSError *error = nil;
+    
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        responseText = [response.responseText copy];
+        error = [response.error copy];
+        operationComplete = YES;
+        
+    }];
+    
+    STAssertTrue([self waitWithTimeout:15.0], @"wait timeout");
+
+    NSLog(@"redirect loop error: %@", error);
+    
+    STAssertTrue(error != nil, @"redirect loop error", @"but it is not");
+    
+    [responseText release];
+}
+
+- (void)testHTTPRedirectPost2616 {
+    RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/redirect-post.php"];
+    request.shouldUseRFC2616RedirectBehaviour = YES;
+    
+    [[request formPost] setPostValue:@"1" forKey:@"a"];
+    [[request formPost] setPostValue:@"2" forKey:@"b"];
+    
+    __block NSString *responseText = nil;
+    
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        if (response.error == nil) {
+            responseText = [response.responseText copy];
+        }
+        else 
+            STFail(@"response error %@", response.error);
+        
+        operationComplete = YES;
+        
+    }];
+    
+    STAssertTrue([self waitWithTimeout:5.0], @"wait timeout");
+    STAssertEqualObjects(responseText, @"a=>1\nb=>2\n", @"but it is not");
+}
+
 
 
 @end

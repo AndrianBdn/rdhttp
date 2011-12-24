@@ -59,6 +59,7 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property(nonatomic, assign) dispatch_queue_t   dispatchQueue;
 @property(nonatomic, assign) BOOL               saveResponseToFile;
 @property(nonatomic, assign) NSStringEncoding   encoding;
+@property(nonatomic, assign) BOOL               shouldRedirect;
 @property(nonatomic, assign) BOOL               shouldUseRFC2616RedirectBehaviour;
 @property(nonatomic, assign) BOOL               cancelCausesCompletion;
 
@@ -77,6 +78,8 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 + (id)customRequest:(NSString *)method withURL:(NSObject *)url;
 
 - (void)addValue:(NSString *)value forHTTPHeaderField:(NSString *)field;
+
+- (void)tryBasicHTTPAuthorizationWithUsername:(NSString *)username password:(NSString *)password;
 
 - (void)setHTTPBodyData:(NSData *)data;
 - (void)setHTTPBodyStream:(NSInputStream *)inputStream;

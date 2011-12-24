@@ -10,8 +10,8 @@ Currently the library is in development. Following tasks are active:
 
 * More unit tests 
 * <del>Tested and good 'cancel' method</del>
-* RFC 2616 redirect behaviour
-* Generating basic authorizaion header
+* <del>RFC 2616 redirect behaviour</del>
+* <del>Generating basic authorizaion header</del>
 * better GCD / threading options
 * <del>NSOperation methods</del>
 * Use library in production code for 100000+ users
