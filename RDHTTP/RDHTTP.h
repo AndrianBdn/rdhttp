@@ -63,6 +63,13 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property(nonatomic, assign) BOOL               shouldUseRFC2616RedirectBehaviour;
 @property(nonatomic, assign) BOOL               cancelCausesCompletion;
 
+@property(nonatomic, assign) NSTimeInterval                 timeoutInterval;
+@property(nonatomic, assign) NSURLRequestCachePolicy        cachePolicy;
+@property(nonatomic, assign) NSURLRequestNetworkServiceType networkServiceType;
+@property(nonatomic, assign) BOOL                           HTTPShouldUsePipelining;
+@property(nonatomic, assign) BOOL                           HTTPShouldHandleCookies;
+@property(nonatomic, assign) NSURL                          *URL;
+
 @property(nonatomic, copy)  rdhttp_httpauth_block_t HTTPAuthHandler;
 @property(nonatomic, copy)  rdhttp_trustssl_block_t SSLCertificateTrustHandler;
 @property(nonatomic, copy)  rdhttp_header_block_t   headersHandler;
@@ -77,10 +84,9 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 + (id)postRequestWithURL:(NSObject *)url;
 + (id)customRequest:(NSString *)method withURL:(NSObject *)url;
 
-- (void)addValue:(NSString *)value forHTTPHeaderField:(NSString *)field;
-
 - (void)tryBasicHTTPAuthorizationWithUsername:(NSString *)username password:(NSString *)password;
 
+- (void)addValue:(NSString *)value forHTTPHeaderField:(NSString *)field;
 - (void)setHTTPBodyData:(NSData *)data;
 - (void)setHTTPBodyStream:(NSInputStream *)inputStream;
 - (void)setHTTPBodyFilePath:(NSString *)filePath;

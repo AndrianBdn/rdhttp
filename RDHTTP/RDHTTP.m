@@ -177,7 +177,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 
 
-#pragma mark - RDHTTPRequest -
+#pragma mark - RDHTTPRequest
 
 @interface RDHTTPRequest() {
     NSMutableURLRequest *urlRequest;
@@ -224,6 +224,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         self.dispatchQueue = dispatch_get_main_queue();
         encoding = NSUTF8StringEncoding;
         shouldRedirect = YES;
+        urlRequest.timeoutInterval = 20;
     }
     return self;
 }
@@ -373,6 +374,54 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize SSLCertificateTrustHandler;
 @synthesize HTTPAuthHandler;
 
+- (void)setURL:(NSURL *)URL {
+    [urlRequest setURL:URL];
+}
+
+- (NSURL *)URL {
+    return [urlRequest URL];
+}
+
+- (void)setCachePolicy:(NSURLRequestCachePolicy)cachePolicy {
+    [urlRequest setCachePolicy:cachePolicy];
+}
+
+- (NSURLRequestCachePolicy)cachePolicy {
+    return [urlRequest cachePolicy];
+}
+
+- (void)setNetworkServiceType:(NSURLRequestNetworkServiceType)networkServiceType {
+    [urlRequest setNetworkServiceType:networkServiceType];
+}
+
+- (NSURLRequestNetworkServiceType)networkServiceType {
+    return [urlRequest networkServiceType];
+}
+
+- (void)setHTTPShouldHandleCookies:(BOOL)HTTPShouldHandleCookies {
+    [urlRequest setHTTPShouldHandleCookies:HTTPShouldHandleCookies];
+}
+
+- (BOOL)HTTPShouldHandleCookies {
+    return [urlRequest HTTPShouldHandleCookies];
+}
+
+- (void)setHTTPShouldUsePipelining:(BOOL)HTTPShouldUsePipelining {
+    [urlRequest setHTTPShouldUsePipelining:HTTPShouldUsePipelining];
+}
+
+- (BOOL)HTTPShouldUsePipelining {
+    return [urlRequest HTTPShouldUsePipelining];
+}
+
+
+- (void)setTimeoutInterval:(NSTimeInterval)timeoutInterval {
+    [urlRequest setTimeoutInterval:timeoutInterval];
+}
+
+- (NSTimeInterval)timeoutInterval {
+    return urlRequest.timeoutInterval;
+}
 
 #pragma mark - internal
 
@@ -411,7 +460,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 
 
-#pragma mark - RDHTTPFormPost -
+#pragma mark - RDHTTPFormPost
 
 @interface RDHTTPMultipartPostStream : NSInputStream {
     NSString            *contentBoundary;
@@ -802,7 +851,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 
 
-#pragma mark - Challenge Decision Helper Objects - 
+#pragma mark - Challenge Decision Helper Objects
 
 @interface RDHTTPChallangeDecision() {
 @protected
@@ -867,7 +916,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 
 
-#pragma mark - RDHTTP -
+#pragma mark - RDHTTP
 
 @interface RDHTTPOperation()<NSURLConnectionDataDelegate, NSURLConnectionDelegate> {
     RDHTTPRequest       *request; // this object is mutable, we agreed to use our copy for non-mutable tasks only
