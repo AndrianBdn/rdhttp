@@ -62,6 +62,8 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property(nonatomic, assign) BOOL               shouldRedirect;
 @property(nonatomic, assign) BOOL               shouldUseRFC2616RedirectBehaviour;
 @property(nonatomic, assign) BOOL               cancelCausesCompletion;
+@property(nonatomic, copy)   NSString           *userAgent;
+
 
 @property(nonatomic, assign) NSTimeInterval                 timeoutInterval;
 @property(nonatomic, assign) NSURLRequestCachePolicy        cachePolicy;
@@ -86,7 +88,7 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 
 - (void)tryBasicHTTPAuthorizationWithUsername:(NSString *)username password:(NSString *)password;
 
-- (void)addValue:(NSString *)value forHTTPHeaderField:(NSString *)field;
+- (void)setValue:(NSString *)value forHTTPHeaderField:(NSString *)field;
 - (void)setHTTPBodyData:(NSData *)data;
 - (void)setHTTPBodyStream:(NSInputStream *)inputStream;
 - (void)setHTTPBodyFilePath:(NSString *)filePath;

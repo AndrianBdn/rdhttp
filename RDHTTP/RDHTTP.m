@@ -283,14 +283,14 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return [self customRequest:@"POST" withURL:url];
 }
 
-- (void)addValue:(NSString *)value forHTTPHeaderField:(NSString *)field {
-    [urlRequest addValue:value forHTTPHeaderField:field];
+- (void)setValue:(NSString *)value forHTTPHeaderField:(NSString *)field {
+    [urlRequest setValue:value forHTTPHeaderField:field];
 }
 
 - (void)tryBasicHTTPAuthorizationWithUsername:(NSString *)username password:(NSString *)password {
     NSString *authString = [NSString stringWithFormat:@"%@:%@", username, password];
     NSString *headerValue = [NSString stringWithFormat:@"Basic %@", [self base64encodeString:authString]];
-    [self addValue:headerValue forHTTPHeaderField:@"Authorization"];
+    [self setValue:headerValue forHTTPHeaderField:@"Authorization"];
 }
 
 - (void)setHTTPBodyStream:(NSInputStream *)inputStream {
@@ -309,7 +309,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (void)setHTTPBodyData:(NSData *)data {
     [self setHTTPBodyStream:[NSInputStream inputStreamWithData:data]];
-    [self addValue:[NSString stringWithFormat:@"%u", [data length]] forHTTPHeaderField:@"Content-Length"];
+    [self setValue:[NSString stringWithFormat:@"%u", [data length]] forHTTPHeaderField:@"Content-Length"];
 }
 
 - (void)setHTTPBodyFilePath:(NSString *)filePath {
@@ -421,6 +421,15 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (NSTimeInterval)timeoutInterval {
     return urlRequest.timeoutInterval;
+}
+
+
+- (void)setUserAgent:(NSString *)userAgent {
+    [urlRequest setValue:userAgent forHTTPHeaderField:@"User-Agent"];
+}
+
+- (NSString *)userAgent {
+    return [urlRequest valueForHTTPHeaderField:@"User-Agent"];
 }
 
 #pragma mark - internal

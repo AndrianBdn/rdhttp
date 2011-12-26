@@ -62,9 +62,32 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     }];
     
-    STAssertTrue([self waitWithTimeout:5.0], @"wait timeout");
+    STAssertTrue([self waitWithTimeout:15.0], @"wait timeout");
     STAssertEqualObjects(responseText, @"RDHTTP Is Working OK", @"but it is not");
 }
+
+- (void)testHTTPGetUserAgent {
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://whatsmyuseragent.com/"];
+    request.userAgent = @"GlokayaKuzdra 1.0/RDHTTP";
+    
+    __block NSString *responseText = nil;
+    
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        if (response.error == nil) {
+            responseText = [response.responseText copy];
+        }
+        else 
+            STFail(@"response error %@", response.error);
+        
+        operationComplete = YES;
+        
+    }];
+    
+    STAssertTrue([self waitWithTimeout:15.0], @"wait timeout");
+    STAssertTrue([responseText rangeOfString:@"GlokayaKuzdra 1.0/RDHTTP"].location != NSNotFound, 
+                 @"expected GlokayaKuzdra user agent");
+}
+
 
 - (void)testSimpleHTTPPost {
     RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/post-values.php"];
@@ -84,7 +107,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
         
     }];
     
-    STAssertTrue([self waitWithTimeout:5.0], @"wait timeout");
+    STAssertTrue([self waitWithTimeout:15.0], @"wait timeout");
     STAssertEqualObjects(responseText, @"a=>1\nb=>2\n", @"but it is not");
 }
 
