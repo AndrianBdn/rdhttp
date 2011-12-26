@@ -64,7 +64,6 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property(nonatomic, assign) BOOL               cancelCausesCompletion;
 @property(nonatomic, copy)   NSString           *userAgent;
 
-
 @property(nonatomic, assign) NSTimeInterval                 timeoutInterval;
 @property(nonatomic, assign) NSURLRequestCachePolicy        cachePolicy;
 @property(nonatomic, assign) NSURLRequestNetworkServiceType networkServiceType;
@@ -77,6 +76,7 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property(nonatomic, copy)  rdhttp_header_block_t   headersHandler;
 @property(nonatomic, copy)  rdhttp_progress_block_t progressHandler;
 
+// additional difinition of setters make Xcode autocompletion better
 - (void)setHTTPAuthHandler:(rdhttp_httpauth_block_t)HTTPAuthHandler;
 - (void)setSSLCertificateTrustHandler:(rdhttp_trustssl_block_t)SSLCertificateTrustHandler;
 - (void)setHeadersHandler:(rdhttp_header_block_t)headersHandler;
@@ -94,10 +94,7 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 - (void)setHTTPBodyFilePath:(NSString *)filePath;
 
 - (RDHTTPOperation *)operationWithCompletionHandler:(rdhttp_block_t)aCompletionBlock;
-
 - (RDHTTPOperation *)startWithCompletionHandler:(rdhttp_block_t)aCompletionBlock;
-
-
 @end
 
 
@@ -110,12 +107,12 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 - (NSString *)valueForHTTPHeaderField:(NSString *)field;
 @property(nonatomic, readonly) BOOL         isCancelled;
 @property(nonatomic, readonly) NSDictionary *userInfo;
-@property(nonatomic, readonly) NSError  *httpError;
-@property(nonatomic, readonly) NSError  *networkError;
-@property(nonatomic, readonly) NSError  *error;
-@property(nonatomic, readonly) NSString *responseText;
-@property(nonatomic, readonly) NSData   *responseData;
-
+@property(nonatomic, readonly) NSError      *httpError;
+@property(nonatomic, readonly) NSError      *networkError;
+@property(nonatomic, readonly) NSError      *error;
+@property(nonatomic, readonly) NSString     *responseText;
+@property(nonatomic, readonly) NSData       *responseData;
+@property(nonatomic, readonly) NSURL        *responseFileURL;
 @end
 
 
@@ -145,6 +142,7 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property (readonly) BOOL isExecuting;
 @property (readonly) BOOL isFinished;
 @property (readonly) BOOL isCancelled;
+- (void)cancelWithCompletionHandler;
 @end
 
 

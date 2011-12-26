@@ -64,7 +64,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     
     NSError           *error;
     NSError           *httpError;
-    NSString          *tempFilePath;
+    NSURL             *responseFileURL;
     NSData            *responseData;
     NSString          *responseTextCached;
     NSDictionary      *responseHeaders;
@@ -85,6 +85,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize userInfo;
 @synthesize responseData;
 @synthesize isCancelled;
+@synthesize responseFileURL;
 
 - (id)initWithResponse:(NSHTTPURLResponse *)aResponse 
                request:(RDHTTPRequest *)aRequest
@@ -98,7 +99,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         request = [aRequest retain];
         response = [aResponse retain];
         error = [anError retain];
-        tempFilePath = [aTempFilePath retain];
+        if (aTempFilePath) 
+            responseFileURL = [[NSURL fileURLWithPath:aTempFilePath] retain];
         responseData = [aResponseData retain];
         isCancelled = anIsCancelledFlag;
     }
@@ -111,8 +113,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [response release];
     
     [error release];
-    [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
-    [tempFilePath release];
+    [[NSFileManager defaultManager] removeItemAtPath:[responseFileURL path] error:nil];
+    [responseFileURL release];
     [responseData release];
     
     [httpError release];
@@ -155,7 +157,19 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return (NSString *)[responseHeaders objectForKey:field];
 }
 
+- (NSData *)responseData {
+    if (responseData == nil && responseFileURL) {
+        NSLog(@"RDHTTP: attempt to access responseData with saveResponseToFile=YES set in request. return nil");
+        return nil;
+    }
+    return responseData;
+}
+
 - (NSString *)responseText {
+    if (responseData == nil && responseFileURL) {
+        NSLog(@"RDHTTP: attempt to access responseText with saveResponseToFile=YES set in request. return nil");
+        return nil;
+    }
     if (responseTextCached == nil && responseData)
         responseTextCached = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
     return responseTextCached;
@@ -996,7 +1010,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
                                          startImmediately:YES];
 }
 
-- (void)cancel {
+- (void)_cancel:(BOOL)shouldCallCompletion {
     [connection cancel];
     connection = nil;
     
@@ -1004,7 +1018,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     isCancelled = YES;
     [self didChangeValueForKey:@"isCancelled"];
     
-    if (request.completionBlock == nil || request.cancelCausesCompletion == NO)
+    if ((request.completionBlock == nil) || (shouldCallCompletion == NO))
         return;
     
     rdhttp_block_t completionBlock = request.completionBlock;
@@ -1020,6 +1034,14 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     dispatch_async(request.dispatchQueue, ^{
         completionBlock(response);
     });
+}
+
+- (void)cancelWithCompletionHandler {
+    [self _cancel:YES];
+}
+
+- (void)cancel {
+    [self _cancel:request.cancelCausesCompletion];
 }
 
 - (void)prepareTempFile {
@@ -1206,7 +1228,9 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
             return;
         }
 
-        trust(serverTrust);        
+        dispatch_async(request.dispatchQueue, ^{ 
+            trust(serverTrust);
+        });
         [serverTrust release];
 
     }
@@ -1222,8 +1246,10 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
             [httpAuthorizer release];
             return;
         }
-        
-        auth(httpAuthorizer);
+            
+        dispatch_async(request.dispatchQueue, ^{
+            auth(httpAuthorizer);
+        });
         
         [httpAuthorizer release];
     }
