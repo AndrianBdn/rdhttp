@@ -44,11 +44,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @end
 
 @interface RDHTTPOperation(RDHTTPRequestInterface)
-
 - (id)initWithRequest:(RDHTTPRequest *)aRequest;
-
-- (void)start;
-
 @end
 
 
@@ -213,6 +209,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize shouldRedirect;
 @synthesize shouldUseRFC2616RedirectBehaviour;
 @synthesize cancelCausesCompletion;
+@synthesize useInternalThread;
 
 - (id)initWithMethod:(NSString *)aMethod resource:(NSObject *)urlObject {
     self = [super init];
@@ -239,6 +236,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         encoding = NSUTF8StringEncoding;
         shouldRedirect = YES;
         urlRequest.timeoutInterval = 20;
+        useInternalThread = YES;
     }
     return self;
 }
@@ -272,6 +270,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     request.cancelCausesCompletion = cancelCausesCompletion;
     request.shouldRedirect = shouldRedirect;
     request.shouldUseRFC2616RedirectBehaviour = shouldUseRFC2616RedirectBehaviour;
+    request.useInternalThread = useInternalThread;
     
     [request setSSLCertificateTrustHandler:self.SSLCertificateTrustHandler];
     [request setHTTPAuthHandler:self.HTTPAuthHandler];
@@ -935,11 +934,32 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @end
 
 
+#pragma mark - RDHTTPThread
+
+@interface RDHTTPThread : NSThread {
+}
+@end
+
+static RDHTTPThread *_rdhttpThread;
+
+@implementation RDHTTPThread
+
+- (void)main {
+    @autoreleasepool {
+        self.name = @"RDHTTPConnectionThread";
+        pthread_setname_np("RDHTTPConnectionThread");
+        [NSTimer scheduledTimerWithTimeInterval:1000000 target:nil selector:nil userInfo:nil repeats:YES];
+        NSRunLoop *loop = [NSRunLoop currentRunLoop];
+        while(!self.isCancelled && [loop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:10.0]]);
+    }
+}
+@end
 
 
 
 
-#pragma mark - RDHTTP
+
+#pragma mark - RDHTTPOperation
 
 @interface RDHTTPOperation()<NSURLConnectionDataDelegate, NSURLConnectionDelegate> {
     RDHTTPRequest       *request; // this object is mutable, we agreed to use our copy for non-mutable tasks only
@@ -960,6 +980,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     BOOL                isExecuting;
     BOOL                isFinished;
 }
+
+- (void)_start;
 
 @end
 
@@ -1003,12 +1025,33 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [self didChangeValueForKey:@"isExecuting"];
     
     NSAssert(isExecuting && isFinished == NO, @"RDHTTPConnection: someone called -(void)start twice");
-    [request prepare];
     
-    connection = [[NSURLConnection alloc] initWithRequest:[request _nsurlrequest]
-                                                 delegate:self
-                                         startImmediately:YES];
+    if (request.useInternalThread) {
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            if (_rdhttpThread == nil) {
+                _rdhttpThread = [[RDHTTPThread alloc] init];
+                [_rdhttpThread start];
+            }            
+        });
+        
+        [self performSelector:@selector(_start) onThread:_rdhttpThread withObject:nil waitUntilDone:NO];
+    }
+    else 
+        [self _start];
 }
+
+- (void)_start {
+    [request prepare];
+    connection = [[[NSURLConnection alloc] initWithRequest:[request _nsurlrequest]
+                                                  delegate:self
+                                          startImmediately:NO] autorelease];
+
+    [connection scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+    [connection start];
+}
+             
+
 
 - (void)_cancel:(BOOL)shouldCallCompletion {
     [connection cancel];
@@ -1086,7 +1129,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)aResponse {
-    
     NSAssert([aResponse isKindOfClass:[NSHTTPURLResponse class]], @"NSURLConnection did not return NSHTTPURLResponse");
 
     httpResponse = [(NSHTTPURLResponse *)aResponse retain];
@@ -1108,7 +1150,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
                                                                      request:request
                                                                        error:nil
                                                                  isCancelled:NO
-                                                                tempFilePath:nil // too earyly to pass tempFilePath, it is empty
+                                                                tempFilePath:nil // too early to pass tempFilePath, it is empty
                                                                         data:nil] autorelease];
         
         dispatch_async(request.dispatchQueue, ^{
@@ -1254,12 +1296,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         [httpAuthorizer release];
     }
 }
-
-
-
-
-
-
 
 @end
 

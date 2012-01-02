@@ -12,7 +12,7 @@ Currently the library is in development. Following tasks are active:
 * <del>Tested and good 'cancel' method</del>
 * <del>RFC 2616 redirect behaviour</del>
 * <del>Generating basic authorizaion header</del>
-* better GCD / threading options
+* <del>better GCD / threading options</del>
 * <del>NSOperation methods</del>
 * Use library in production code for 100000+ users
 * Documentation

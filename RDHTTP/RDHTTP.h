@@ -63,6 +63,7 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property(nonatomic, assign) BOOL               shouldUseRFC2616RedirectBehaviour;
 @property(nonatomic, assign) BOOL               cancelCausesCompletion;
 @property(nonatomic, copy)   NSString           *userAgent;
+@property(nonatomic, assign) BOOL               useInternalThread;
 
 @property(nonatomic, assign) NSTimeInterval                 timeoutInterval;
 @property(nonatomic, assign) NSURLRequestCachePolicy        cachePolicy;
@@ -134,7 +135,6 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 - (void)trust;
 - (void)dontTrust;
 @end
-
 
 
 // ------------- RDHTTPConnection 
