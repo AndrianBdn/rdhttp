@@ -166,8 +166,22 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         NSLog(@"RDHTTP: attempt to access responseText with saveResponseToFile=YES set in request. return nil");
         return nil;
     }
+    
+    NSStringEncoding encoding = NSUTF8StringEncoding; // default 
+    if (response.textEncodingName) {
+        encoding = CFStringConvertEncodingToNSStringEncoding(CFStringConvertIANACharSetNameToEncoding((CFStringRef)response.textEncodingName));
+    }
+    
     if (responseTextCached == nil && responseData)
-        responseTextCached = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
+        responseTextCached = [[NSString alloc] initWithData:responseData encoding:encoding];
+    
+    if (responseTextCached == nil && responseData) {
+        if (encoding != NSUTF8StringEncoding) 
+            NSLog(@"RDHTTP: warning, unable to create string with %@ encoding. Use responseData.", response.textEncodingName);
+        else
+            NSLog(@"RDHTTP: warning, unable to create string with UTF-8 encoding. Use responseData.");
+    }
+    
     return responseTextCached;
 }
 
