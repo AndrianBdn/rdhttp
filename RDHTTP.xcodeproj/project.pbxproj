@@ -10,9 +10,6 @@
 		E63D88E8148141F000F15E16 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88E7148141F000F15E16 /* UIKit.framework */; };
 		E63D88EA148141F000F15E16 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88E9148141F000F15E16 /* Foundation.framework */; };
 		E63D88EC148141F000F15E16 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88EB148141F000F15E16 /* CoreGraphics.framework */; };
-		E63D88F2148141F000F15E16 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E63D88F0148141F000F15E16 /* InfoPlist.strings */; };
-		E63D88F4148141F000F15E16 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = E63D88F3148141F000F15E16 /* main.m */; };
-		E63D88F8148141F000F15E16 /* RDHTTPAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = E63D88F7148141F000F15E16 /* RDHTTPAppDelegate.m */; };
 		E63D8900148141F000F15E16 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88FF148141F000F15E16 /* SenTestingKit.framework */; };
 		E63D8901148141F000F15E16 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88E7148141F000F15E16 /* UIKit.framework */; };
 		E63D8902148141F000F15E16 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E63D88E9148141F000F15E16 /* Foundation.framework */; };
@@ -23,7 +20,9 @@
 		E6AF240A14A2220700D1E01F /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E6AF240914A2220700D1E01F /* MobileCoreServices.framework */; };
 		E6AF240F14A229BB00D1E01F /* Earphones_UG.pdf in Resources */ = {isa = PBXBuildFile; fileRef = E6AF240E14A229BB00D1E01F /* Earphones_UG.pdf */; };
 		E6AF241114A2338700D1E01F /* cakephp-cakephp-2.0.3-0-gde5a4ea.zip in Resources */ = {isa = PBXBuildFile; fileRef = E6AF241014A2338700D1E01F /* cakephp-cakephp-2.0.3-0-gde5a4ea.zip */; };
-		E6B5DF0414A2977200650FE1 /* readme.markdown in Resources */ = {isa = PBXBuildFile; fileRef = E6B5DF0314A2977200650FE1 /* readme.markdown */; };
+		E6CD8FAB14B64839006B2A22 /* RDHTTPAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = E6CD8FAA14B64839006B2A22 /* RDHTTPAppDelegate.m */; };
+		E6CD8FB214B6484F006B2A22 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E6CD8FAD14B6484F006B2A22 /* InfoPlist.strings */; };
+		E6CD8FB314B6484F006B2A22 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = E6CD8FAF14B6484F006B2A22 /* main.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,12 +40,6 @@
 		E63D88E7148141F000F15E16 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		E63D88E9148141F000F15E16 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		E63D88EB148141F000F15E16 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
-		E63D88EF148141F000F15E16 /* RDHTTP-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "RDHTTP-Info.plist"; sourceTree = "<group>"; };
-		E63D88F1148141F000F15E16 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		E63D88F3148141F000F15E16 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		E63D88F5148141F000F15E16 /* RDHTTP-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RDHTTP-Prefix.pch"; sourceTree = "<group>"; };
-		E63D88F6148141F000F15E16 /* RDHTTPAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDHTTPAppDelegate.h; sourceTree = "<group>"; };
-		E63D88F7148141F000F15E16 /* RDHTTPAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDHTTPAppDelegate.m; sourceTree = "<group>"; };
 		E63D88FE148141F000F15E16 /* RDHTTPTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RDHTTPTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E63D88FF148141F000F15E16 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
 		E63D8907148141F000F15E16 /* RDHTTPTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "RDHTTPTests-Info.plist"; sourceTree = "<group>"; };
@@ -60,6 +53,12 @@
 		E6AF240E14A229BB00D1E01F /* Earphones_UG.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = Earphones_UG.pdf; sourceTree = "<group>"; };
 		E6AF241014A2338700D1E01F /* cakephp-cakephp-2.0.3-0-gde5a4ea.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = "cakephp-cakephp-2.0.3-0-gde5a4ea.zip"; sourceTree = "<group>"; };
 		E6B5DF0314A2977200650FE1 /* readme.markdown */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.markdown; sourceTree = "<group>"; };
+		E6CD8FA914B64839006B2A22 /* RDHTTPAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RDHTTPAppDelegate.h; path = DemoAppFiles/RDHTTPAppDelegate.h; sourceTree = SOURCE_ROOT; };
+		E6CD8FAA14B64839006B2A22 /* RDHTTPAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RDHTTPAppDelegate.m; path = DemoAppFiles/RDHTTPAppDelegate.m; sourceTree = SOURCE_ROOT; };
+		E6CD8FAE14B6484F006B2A22 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = InfoPlist.strings; sourceTree = "<group>"; };
+		E6CD8FAF14B6484F006B2A22 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = DemoAppFiles/main.m; sourceTree = SOURCE_ROOT; };
+		E6CD8FB014B6484F006B2A22 /* RDHTTP-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "RDHTTP-Info.plist"; path = "DemoAppFiles/RDHTTP-Info.plist"; sourceTree = SOURCE_ROOT; };
+		E6CD8FB114B6484F006B2A22 /* RDHTTP-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "RDHTTP-Prefix.pch"; path = "DemoAppFiles/RDHTTP-Prefix.pch"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,8 +123,8 @@
 			children = (
 				E63D89161481422D00F15E16 /* RDHTTP.h */,
 				E63D89171481422D00F15E16 /* RDHTTP.m */,
-				E63D88F6148141F000F15E16 /* RDHTTPAppDelegate.h */,
-				E63D88F7148141F000F15E16 /* RDHTTPAppDelegate.m */,
+				E6CD8FA914B64839006B2A22 /* RDHTTPAppDelegate.h */,
+				E6CD8FAA14B64839006B2A22 /* RDHTTPAppDelegate.m */,
 				E63D88EE148141F000F15E16 /* Supporting Files */,
 			);
 			path = RDHTTP;
@@ -134,10 +133,10 @@
 		E63D88EE148141F000F15E16 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				E63D88EF148141F000F15E16 /* RDHTTP-Info.plist */,
-				E63D88F0148141F000F15E16 /* InfoPlist.strings */,
-				E63D88F3148141F000F15E16 /* main.m */,
-				E63D88F5148141F000F15E16 /* RDHTTP-Prefix.pch */,
+				E6CD8FAC14B6484F006B2A22 /* en.lproj */,
+				E6CD8FAF14B6484F006B2A22 /* main.m */,
+				E6CD8FB014B6484F006B2A22 /* RDHTTP-Info.plist */,
+				E6CD8FB114B6484F006B2A22 /* RDHTTP-Prefix.pch */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -163,6 +162,15 @@
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
+		};
+		E6CD8FAC14B6484F006B2A22 /* en.lproj */ = {
+			isa = PBXGroup;
+			children = (
+				E6CD8FAD14B6484F006B2A22 /* InfoPlist.strings */,
+			);
+			name = en.lproj;
+			path = DemoAppFiles/en.lproj;
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
 
@@ -235,8 +243,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E63D88F2148141F000F15E16 /* InfoPlist.strings in Resources */,
-				E6B5DF0414A2977200650FE1 /* readme.markdown in Resources */,
+				E6CD8FB214B6484F006B2A22 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -274,9 +281,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E63D88F4148141F000F15E16 /* main.m in Sources */,
-				E63D88F8148141F000F15E16 /* RDHTTPAppDelegate.m in Sources */,
 				E63D89181481422D00F15E16 /* RDHTTP.m in Sources */,
+				E6CD8FAB14B64839006B2A22 /* RDHTTPAppDelegate.m in Sources */,
+				E6CD8FB314B6484F006B2A22 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,18 +306,18 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		E63D88F0148141F000F15E16 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				E63D88F1148141F000F15E16 /* en */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
 		E63D8908148141F000F15E16 /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
 				E63D8909148141F000F15E16 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		E6CD8FAD14B6484F006B2A22 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E6CD8FAE14B6484F006B2A22 /* en */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -367,8 +374,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "RDHTTP/RDHTTP-Prefix.pch";
-				INFOPLIST_FILE = "RDHTTP/RDHTTP-Info.plist";
+				GCC_PREFIX_HEADER = "DemoAppFiles/RDHTTP-Prefix.pch";
+				INFOPLIST_FILE = "DemoAppFiles/RDHTTP-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -379,8 +386,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "RDHTTP/RDHTTP-Prefix.pch";
-				INFOPLIST_FILE = "RDHTTP/RDHTTP-Info.plist";
+				GCC_PREFIX_HEADER = "DemoAppFiles/RDHTTP-Prefix.pch";
+				INFOPLIST_FILE = "DemoAppFiles/RDHTTP-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -396,7 +403,7 @@
 					"$(DEVELOPER_LIBRARY_DIR)/Frameworks",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "RDHTTP/RDHTTP-Prefix.pch";
+				GCC_PREFIX_HEADER = "DemoAppFiles/RDHTTP-Prefix.pch";
 				INFOPLIST_FILE = "RDHTTPTests/RDHTTPTests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUNDLE_LOADER)";
@@ -413,7 +420,7 @@
 					"$(DEVELOPER_LIBRARY_DIR)/Frameworks",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "RDHTTP/RDHTTP-Prefix.pch";
+				GCC_PREFIX_HEADER = "DemoAppFiles/RDHTTP-Prefix.pch";
 				INFOPLIST_FILE = "RDHTTPTests/RDHTTPTests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUNDLE_LOADER)";

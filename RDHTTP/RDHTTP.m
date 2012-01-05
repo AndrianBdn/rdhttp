@@ -1016,7 +1016,6 @@ static RDHTTPThread *_rdhttpThread;
     [httpResponse release];
     [httpResponseData release];
     
-    [connection release];
     [super dealloc];
 }
 

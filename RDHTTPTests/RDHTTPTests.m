@@ -393,6 +393,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     STAssertTrue(error != nil, @"redirect loop error", @"but it is not");
     
     [responseText release];
+    [error release];
 }
 
 - (void)testHTTPRedirectPost2616 {
