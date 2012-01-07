@@ -53,7 +53,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
         if (response.error == nil) {
-            responseText = [response.responseText copy];
+            responseText = [response.responseString copy];
         }
         else 
             STFail(@"response error %@", response.error);
@@ -74,7 +74,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
         if (response.error == nil) {
-            responseText = [response.responseText copy];
+            responseText = [response.responseString copy];
         }
         else 
             STFail(@"response error %@", response.error);
@@ -98,7 +98,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
         if (response.error == nil) {
-            responseText = [response.responseText copy];
+            responseText = [response.responseString copy];
         }
         else 
             STFail(@"response error %@", response.error);
@@ -123,7 +123,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
         if (response.error == nil) {
-            responseText = [response.responseText copy];
+            responseText = [response.responseString copy];
         }
         else 
             NSLog(@"response error %@", response.error);
@@ -148,7 +148,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
         if (response.error == nil) {
-            responseText = [response.responseText copy];
+            responseText = [response.responseString copy];
         }
         else 
             NSLog(@"response error %@", response.error);
@@ -178,7 +178,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
         if (response.error == nil) {
-            responseText = [response.responseText copy];
+            responseText = [response.responseString copy];
         }
         else 
             NSLog(@"response error %@", response.error);
@@ -194,6 +194,32 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
 }
 
+- (void)testNormalHTTPSGet {
+    
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"https://encrypted.google.com/"];
+    __block NSString *responseText = nil;
+    __block NSError *error = nil;
+    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        if (response.error == nil) {
+            responseText = [response.responseString copy];
+        }
+        else {
+            error = [response.error copy];
+            NSLog(@"response error %@", response.error);
+        }
+        
+        operationComplete = YES;
+    }];
+    
+    
+    STAssertTrue([self waitWithTimeout:5.0], @"wait timeout");
+    STAssertTrue(error == nil, @"No error in normal https query");
+    
+    [responseText release];
+    [error release];
+}
+
+
 - (void)testSelfSignedHTTPSGet {
     
     RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"https://www.pcwebshop.co.uk/"];
@@ -205,7 +231,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
      
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
         if (response.error == nil) {
-            responseText = [response.responseText copy];
+            responseText = [response.responseString copy];
         }
         else 
             NSLog(@"response error %@", response.error);
@@ -220,30 +246,30 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
 }
 
-- (void)testSimpleHTTPPOSTFileUpload {
-    RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/post-file.php"];
-    
-    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"IMG_0045" ofType:@"jpg"];
-    NSURL *url = [NSURL fileURLWithPath:path];
-                  
-    [[request formPost] setFile:url forKey:@"file"];
-    
-    __block NSString *responseText = nil;
-    
-    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
-        if (response.error == nil) {
-            responseText = [response.responseText copy];
-        }
-        else 
-            STFail(@"response error %@", response.error);
-        
-        operationComplete = YES;
-        
-    }];
-    
-    STAssertTrue([self waitWithTimeout:55.0], @"wait timeout");
-    STAssertEqualObjects(responseText, @"size:33464\nmd5:c9894d80c2d05b826fabe24283031fe6", @"but it is not");
-}
+//- (void)testSimpleHTTPPOSTFileUpload {
+//    RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/post-file.php"];
+//    
+//    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"IMG_0045" ofType:@"jpg"];
+//    NSURL *url = [NSURL fileURLWithPath:path];
+//                  
+//    [[request formPost] setFile:url forKey:@"file"];
+//    
+//    __block NSString *responseText = nil;
+//    
+//    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+//        if (response.error == nil) {
+//            responseText = [response.responseString copy];
+//        }
+//        else 
+//            STFail(@"response error %@", response.error);
+//        
+//        operationComplete = YES;
+//        
+//    }];
+//    
+//    STAssertTrue([self waitWithTimeout:55.0], @"wait timeout");
+//    STAssertEqualObjects(responseText, @"size:33464\nmd5:c9894d80c2d05b826fabe24283031fe6", @"but it is not");
+//}
 
 
 - (void)testCancelMethod {
@@ -275,53 +301,53 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 }
 
 
-- (void)testMultipartPOSTFileUpload {
-    RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/post-files-and-fields.php"];
-    
-    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"IMG_0045" ofType:@"jpg"];
-    NSURL *url2 = [NSURL fileURLWithPath:path];
-
-    path = [[NSBundle bundleForClass:[self class]] pathForResource:@"Earphones_UG" ofType:@"pdf"];
-    NSURL *url1 = [NSURL fileURLWithPath:path];
-
-    path = [[NSBundle bundleForClass:[self class]] pathForResource:@"cakephp-cakephp-2.0.3-0-gde5a4ea" ofType:@"zip"];
-    NSURL *url3 = [NSURL fileURLWithPath:path];
-
-    
-    [[request formPost] setFile:url1 forKey:@"file1"];
-    [[request formPost] setFile:url2 forKey:@"file2"];
-    [[request formPost] setFile:url3 forKey:@"file3"];    
-    
-    [[request formPost] setPostValue:@"zorro" forKey:@"text1"];
-    [[request formPost] setPostValue:@"pegasus" forKey:@"text2"];
-    
-    __block NSString *responseText = nil;
-    
-    [request setProgressHandler:^(float progress, BOOL upload) {
-        NSLog(@"%f UPLOAD=%d", progress, upload);
-    }];
-    
-    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
-        if (response.error == nil) {
-            responseText = [response.responseText copy];
-        }
-        else 
-            STFail(@"response error %@", response.error);
-        
-        operationComplete = YES;
-        
-    }];
-    
-    NSMutableString *refString = [NSMutableString stringWithCapacity:1024];
-    [refString appendString:@"877325/b0d1463be77d15f4e31c22169bda45e2\n"];
-    [refString appendString:@"33464/c9894d80c2d05b826fabe24283031fe6\n"];
-    [refString appendString:@"1646835/ecd5e85b41a6c33ecfcc93c0f2c5d421\n"];    
-    [refString appendString:@"zorro/pegasus\n"];
-    
-    STAssertTrue([self waitWithTimeout:55.0], @"wait timeout");
-    STAssertEqualObjects(responseText, refString, @"but it is not");
-    
-}
+//- (void)testMultipartPOSTFileUpload {
+//    RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/post-files-and-fields.php"];
+//    
+//    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"IMG_0045" ofType:@"jpg"];
+//    NSURL *url2 = [NSURL fileURLWithPath:path];
+//
+//    path = [[NSBundle bundleForClass:[self class]] pathForResource:@"Earphones_UG" ofType:@"pdf"];
+//    NSURL *url1 = [NSURL fileURLWithPath:path];
+//
+//    path = [[NSBundle bundleForClass:[self class]] pathForResource:@"cakephp-cakephp-2.0.3-0-gde5a4ea" ofType:@"zip"];
+//    NSURL *url3 = [NSURL fileURLWithPath:path];
+//
+//    
+//    [[request formPost] setFile:url1 forKey:@"file1"];
+//    [[request formPost] setFile:url2 forKey:@"file2"];
+//    [[request formPost] setFile:url3 forKey:@"file3"];    
+//    
+//    [[request formPost] setPostValue:@"zorro" forKey:@"text1"];
+//    [[request formPost] setPostValue:@"pegasus" forKey:@"text2"];
+//    
+//    __block NSString *responseText = nil;
+//    
+//    [request setProgressHandler:^(float progress, BOOL upload) {
+//        NSLog(@"%f UPLOAD=%d", progress, upload);
+//    }];
+//    
+//    [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+//        if (response.error == nil) {
+//            responseText = [response.responseString copy];
+//        }
+//        else 
+//            STFail(@"response error %@", response.error);
+//        
+//        operationComplete = YES;
+//        
+//    }];
+//    
+//    NSMutableString *refString = [NSMutableString stringWithCapacity:1024];
+//    [refString appendString:@"877325/b0d1463be77d15f4e31c22169bda45e2\n"];
+//    [refString appendString:@"33464/c9894d80c2d05b826fabe24283031fe6\n"];
+//    [refString appendString:@"1646835/ecd5e85b41a6c33ecfcc93c0f2c5d421\n"];    
+//    [refString appendString:@"zorro/pegasus\n"];
+//    
+//    STAssertTrue([self waitWithTimeout:55.0], @"wait timeout");
+//    STAssertEqualObjects(responseText, refString, @"but it is not");
+//    
+//}
 
 
 - (void)testHTTPGetRedirect {
@@ -330,7 +356,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
         if (response.error == nil) {
-            responseText = [response.responseText copy];
+            responseText = [response.responseString copy];
         }
         else 
             STFail(@"response error %@", response.error);
@@ -353,7 +379,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     __block NSError *error = nil;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
-        responseText = [response.responseText copy];
+        responseText = [response.responseString copy];
         error = [response.httpError copy];
         operationComplete = YES;
         
@@ -380,7 +406,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     __block NSError *error = nil;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
-        responseText = [response.responseText copy];
+        responseText = [response.responseString copy];
         error = [response.error copy];
         operationComplete = YES;
         
@@ -407,7 +433,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
         if (response.error == nil) {
-            responseText = [response.responseText copy];
+            responseText = [response.responseString copy];
         }
         else 
             STFail(@"response error %@", response.error);

@@ -32,7 +32,6 @@
 
 NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain";
 
-
 #pragma mark - RDHTTP Private API 
 
 @interface RDHTTPRequest(RDHTTPPrivate)
@@ -109,7 +108,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [response release];
     
     [error release];
-    [[NSFileManager defaultManager] removeItemAtPath:[responseFileURL path] error:nil];
     [responseFileURL release];
     [responseData release];
     
@@ -146,6 +144,17 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return nil;
 }
 
+- (NSUInteger)statusCode {
+    return response.statusCode;
+}
+
+- (NSDictionary *)allHeaderFields {
+    if (responseHeaders == nil) {
+        responseHeaders = [[response allHeaderFields] retain];
+    }
+    return responseHeaders;
+}
+
 - (NSString *)valueForHTTPHeaderField:(NSString *)field {
     if (responseHeaders == nil) {
         responseHeaders = [[response allHeaderFields] retain];
@@ -161,7 +170,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return responseData;
 }
 
-- (NSString *)responseText {
+- (NSString *)responseString {
     if (responseData == nil && responseFileURL) {
         NSLog(@"RDHTTP: attempt to access responseText with saveResponseToFile=YES set in request. return nil");
         return nil;
@@ -185,12 +194,34 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return responseTextCached;
 }
 
+- (NSDictionary *)userInfo {
+    return request.userInfo;
+}
+
 - (NSString *)description {
     return [NSString stringWithFormat:@"<RDHTTPResponse: URL %@ code %d length: %d>", 
             response.URL,
             response.statusCode, 
             [responseData length]];
 }
+
+- (BOOL)  moveResponseFileToURL:(NSURL *)destination 
+    withIntermediateDirectories:(BOOL)createIntermediates 
+                          error:(NSError **)anError
+{
+    if (createIntermediates) {
+        if ([[NSFileManager defaultManager] createDirectoryAtPath:[[destination path] stringByDeletingLastPathComponent]
+                                      withIntermediateDirectories:YES
+                                                       attributes:nil
+                                                            error:anError] == NO)
+            return NO;
+    }
+    return [[NSFileManager defaultManager] moveItemAtURL:responseFileURL 
+                                                   toURL:destination
+                                                   error:anError];
+}
+
+
 
 @end
 
@@ -218,7 +249,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize userInfo;
 @synthesize dispatchQueue;
 @synthesize formPost;
-@synthesize saveResponseToFile;
+@synthesize shouldSaveResponseToFile;
 @synthesize encoding;
 @synthesize shouldRedirect;
 @synthesize shouldUseRFC2616RedirectBehaviour;
@@ -280,7 +311,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     NSDictionary *userInfoCopy = [userInfo copyWithZone:zone];
     request.userInfo = userInfoCopy;
     [userInfoCopy release];
-    request.saveResponseToFile = saveResponseToFile;
+    request.shouldSaveResponseToFile = shouldSaveResponseToFile;
     request.cancelCausesCompletion = cancelCausesCompletion;
     request.shouldRedirect = shouldRedirect;
     request.shouldUseRFC2616RedirectBehaviour = shouldUseRFC2616RedirectBehaviour;
@@ -320,31 +351,46 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [self setValue:headerValue forHTTPHeaderField:@"Authorization"];
 }
 
-- (void)setHTTPBodyStream:(NSInputStream *)inputStream {
+- (void)setHTTPBodyStream:(NSInputStream *)inputStream contentType:(NSString *)contentType {
     if ([urlRequest.HTTPMethod isEqualToString:@"GET"]) {
         NSLog(@"RDHTTP: trying to set post body for GET request");
     }
     
-    if (self.formPost) {
+    if (formPost) {
         NSLog(@"RDHTTP: trying to assign postBody with postFiles / multipartPostFiles set");
         NSLog(@"RDHTTP: postFields / multipartPostFiles reset");
         self.formPost = nil;
     }
     
+    if (contentType) {
+        [self setValue:contentType forHTTPHeaderField:@"Content-Type"];
+    }
+    
     [urlRequest setHTTPBodyStream:inputStream];
 }
 
-- (void)setHTTPBodyData:(NSData *)data {
-    [self setHTTPBodyStream:[NSInputStream inputStreamWithData:data]];
+- (void)setHTTPBodyData:(NSData *)data contentType:(NSString *)contentType {
+    [self setHTTPBodyStream:[NSInputStream inputStreamWithData:data] contentType:contentType];
     [self setValue:[NSString stringWithFormat:@"%u", [data length]] forHTTPHeaderField:@"Content-Length"];
 }
 
-- (void)setHTTPBodyFilePath:(NSString *)filePath {
+- (void)setHTTPBodyFilePath:(NSString *)filePath guessContentType:(BOOL)guess {
     if ([[NSFileManager defaultManager] fileExistsAtPath:filePath] == NO) {
         NSLog(@"RDHTTP: not-existing file %@ in setHTTPBodyFilePath", filePath);
         return;
     }
-    [self setHTTPBodyStream:[NSInputStream inputStreamWithFileAtPath:filePath]];
+
+    NSString *contentType = nil;
+    if (guess) {
+        contentType = [RDHTTPFormPost guessContentTypeForURL:[NSURL fileURLWithPath:filePath] 
+                                             defaultEncoding:encoding];
+    }
+
+    
+    NSDictionary *fileAttrs = [[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:nil];
+    unsigned long long size = [fileAttrs fileSize];
+    [self setValue:[NSString stringWithFormat:@"%llu", size] forHTTPHeaderField:@"Content-Length"];
+    [self setHTTPBodyStream:[NSInputStream inputStreamWithFileAtPath:filePath] contentType:contentType];
 }
 
 - (RDHTTPFormPost *)formPost {
@@ -942,7 +988,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
            forAuthenticationChallenge:challenge];
 }
 - (void)dontTrust {
-    [[challenge sender] cancelAuthenticationChallenge:challenge];
+    [[challenge sender] continueWithoutCredentialForAuthenticationChallenge:challenge];
 }
 
 @end
@@ -1109,12 +1155,15 @@ static RDHTTPThread *_rdhttpThread;
     CFRelease(theUUID);
 
     tempFilePath = [[NSTemporaryDirectory() stringByAppendingPathComponent:tempName] retain];
+    [[NSFileManager defaultManager] createFileAtPath:tempFilePath contents:[NSData data] attributes:nil];
     tempFileHandle = [[NSFileHandle fileHandleForWritingAtPath:tempFilePath] retain];
 }
 
 #pragma mark - NSURLConnection delegate / dataSource
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
+    [tempFileHandle closeFile];
+    
     rdhttp_block_t completionBlock = request.completionBlock;
     
     if (completionBlock && [self isCancelled] == NO) {    
@@ -1127,10 +1176,13 @@ static RDHTTPThread *_rdhttpThread;
         
         dispatch_async(request.dispatchQueue, ^{
             completionBlock(response);
+            if (tempFilePath)
+                [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
         });
     }
     else {
-        [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
+        if (tempFilePath)
+            [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
     }
     
     [self willChangeValueForKey:@"isExecuting"];
@@ -1147,8 +1199,8 @@ static RDHTTPThread *_rdhttpThread;
     httpResponse = [(NSHTTPURLResponse *)aResponse retain];
     httpExpectedContentLength = [httpResponse expectedContentLength];
     
-    if (request.saveResponseToFile) {
-        [self prepareTempFile];        
+    if (request.shouldSaveResponseToFile) {
+        [self prepareTempFile];    
     }
     else {
         NSUInteger dataCapacity = 8192;
@@ -1218,7 +1270,8 @@ static RDHTTPThread *_rdhttpThread;
     rdhttp_block_t completionBlock = request.completionBlock;
     
     if (completionBlock == nil || [self isCancelled]) {
-        [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
+        if (tempFilePath)
+            [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
         return;
     }
     
@@ -1232,6 +1285,9 @@ static RDHTTPThread *_rdhttpThread;
     
     dispatch_async(request.dispatchQueue, ^{
         completionBlock(response);
+        if (tempFilePath)
+            [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
+
     });
     
     [self willChangeValueForKey:@"isExecuting"];

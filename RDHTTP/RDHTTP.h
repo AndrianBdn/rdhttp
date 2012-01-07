@@ -30,6 +30,7 @@
 // ------------- RDHTTP Error Domain: 
 extern NSString *const RDHTTPResponseCodeErrorDomain;
 
+
 @class RDHTTPFormPost;
 @class RDHTTPOperation;
 @class RDHTTPResponse;
@@ -57,7 +58,7 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property(nonatomic, retain) NSDictionary       *userInfo;
 @property(nonatomic, retain) RDHTTPFormPost     *formPost;
 @property(nonatomic, assign) dispatch_queue_t   dispatchQueue;
-@property(nonatomic, assign) BOOL               saveResponseToFile;
+@property(nonatomic, assign) BOOL               shouldSaveResponseToFile;
 @property(nonatomic, assign) NSStringEncoding   encoding;
 @property(nonatomic, assign) BOOL               shouldRedirect;
 @property(nonatomic, assign) BOOL               shouldUseRFC2616RedirectBehaviour;
@@ -90,9 +91,10 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 - (void)tryBasicHTTPAuthorizationWithUsername:(NSString *)username password:(NSString *)password;
 
 - (void)setValue:(NSString *)value forHTTPHeaderField:(NSString *)field;
-- (void)setHTTPBodyData:(NSData *)data;
-- (void)setHTTPBodyStream:(NSInputStream *)inputStream;
-- (void)setHTTPBodyFilePath:(NSString *)filePath;
+
+- (void)setHTTPBodyData:(NSData *)data contentType:(NSString *)contentType;
+- (void)setHTTPBodyStream:(NSInputStream *)inputStream contentType:(NSString *)contentType;
+- (void)setHTTPBodyFilePath:(NSString *)filePath guessContentType:(BOOL)guess;
 
 - (RDHTTPOperation *)operationWithCompletionHandler:(rdhttp_block_t)aCompletionBlock;
 - (RDHTTPOperation *)startWithCompletionHandler:(rdhttp_block_t)aCompletionBlock;
@@ -106,14 +108,21 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 // -------------  RDHTTPResponse
 @interface RDHTTPResponse : NSObject
 - (NSString *)valueForHTTPHeaderField:(NSString *)field;
+
+- (BOOL)  moveResponseFileToURL:(NSURL *)destination 
+    withIntermediateDirectories:(BOOL)createIntermediates 
+                          error:(NSError **)anError;
+
 @property(nonatomic, readonly) BOOL         isCancelled;
 @property(nonatomic, readonly) NSDictionary *userInfo;
 @property(nonatomic, readonly) NSError      *httpError;
 @property(nonatomic, readonly) NSError      *networkError;
 @property(nonatomic, readonly) NSError      *error;
-@property(nonatomic, readonly) NSString     *responseText;
+@property(nonatomic, readonly) NSUInteger   statusCode;
+@property(nonatomic, readonly) NSString     *responseString;
 @property(nonatomic, readonly) NSData       *responseData;
 @property(nonatomic, readonly) NSURL        *responseFileURL;
+@property(nonatomic, readonly) NSDictionary *allHeaderFields;
 @end
 
 
