@@ -9,11 +9,13 @@ It is reasonably low-level and does not contain any features unrelated to HTTP (
 Currently the library is in development. Following tasks are active: 
 
 * More unit tests 
+* Actual usage examples
 * <del>Tested and good 'cancel' method</del>
 * <del>RFC 2616 redirect behaviour</del>
 * <del>Generating basic authorizaion header</del>
 * <del>better GCD / threading options</del>
 * <del>NSOperation methods</del>
+* <del>Submit any binary to App Store (private API test)</del>
 * Use library in production code for 100000+ users
 * Documentation
 
@@ -33,8 +35,14 @@ Currently the library is in development. Following tasks are active:
 
 ## Requirements 
 
-* RDHTTP is targeted for iOS4+
-* Most likely it will be compatible with Mac OS X 10.6+
+* iOS4+
+* possibly OS X
+
+
+## Installation 
+
+1. Copy RDHTTP.h and RDHTTP.m from RDHTTP directory to your Xcode project. 
+2. Add MobileCoreServices.framework
 
 
 ## Usage Example
@@ -44,11 +52,10 @@ Simple HTTP GET:
 ```objective-c
 RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/ok.html"];
 [request startWithCompletionHandler:^(RDHTTPResponse *response) {
-    if (response.error == nil) {
-		NSLog(@"response text: %@", response.responseText);
-    }
-    else 
+    if (response.error)
         NSLog(@"error: %@", response.error) 
+    else
+		NSLog(@"response text: %@", response.responseString);
 }];
 ```
 
@@ -58,17 +65,42 @@ Form-data compatible HTTP POST:
 RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/post-values.php"];
 
 [[request formPost] setPostValue:@"value" forKey:@"fieldName"];
-[[request formPost] setPostValue:@"anotherValue" forKey:@"fieldName"];
+[[request formPost] setPostValue:@"anotherValue" forKey:@"anotherField"];
 
 [request startWithCompletionHandler:^(RDHTTPResponse *response) {
-    if (response.error == nil) {
-		NSLog(@"response text: %@", response.responseText);
-    }
-    else 
+    if (response.error)
         NSLog(@"error: %@", response.error) 
+    else
+		NSLog(@"response text: %@", response.responseString);
+        
 }];
 ```
 
+Saving file: 
 
+```objective-c
+RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://www.ubuntu.com/start-download?distro=desktop&bits=32&release=latest"];
 
+request.shouldSaveResponseToFile = YES;
+
+RDHTTPOperation *operation = [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+
+    if (response.error) {
+        NSLog(@"error: %@", response.error);
+        return;
+    }
+        
+    NSURL *dest = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
+                                                          inDomains:NSUserDomainMask] objectAtIndex:0];
+    
+    dest = [dest URLByAppendingPathComponent:@"latest-ubuntu.iso"];
+    
+    [response moveResponseFileToURL:dest
+        withIntermediateDirectories:NO 
+                              error:nil];
+    
+    NSLog(@"saved file to latest-ubuntu.iso");
+    
+}];
+```
 
