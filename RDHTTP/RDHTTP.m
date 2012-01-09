@@ -1075,7 +1075,7 @@ static RDHTTPThread *_rdhttpThread;
 }
 
 - (void)start {
-    if ([self isCancelled]) {
+    if (self.isCancelled || self.isExecuting) {
         return;
     }
     
@@ -1113,6 +1113,9 @@ static RDHTTPThread *_rdhttpThread;
 
 
 - (void)_cancel:(BOOL)shouldCallCompletion {
+    if (self.isCancelled || self.isFinished) 
+        return;
+    
     [connection cancel];
     connection = nil;
     
@@ -1196,6 +1199,7 @@ static RDHTTPThread *_rdhttpThread;
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)aResponse {
     NSAssert([aResponse isKindOfClass:[NSHTTPURLResponse class]], @"NSURLConnection did not return NSHTTPURLResponse");
 
+    [httpResponse release];
     httpResponse = [(NSHTTPURLResponse *)aResponse retain];
     httpExpectedContentLength = [httpResponse expectedContentLength];
     
@@ -1207,6 +1211,7 @@ static RDHTTPThread *_rdhttpThread;
         if (httpExpectedContentLength != NSURLResponseUnknownLength)
             dataCapacity = httpExpectedContentLength;
         
+        [httpResponseData release];
         httpResponseData = [[NSMutableData alloc] initWithCapacity:dataCapacity];
     }
     
@@ -1283,11 +1288,14 @@ static RDHTTPThread *_rdhttpThread;
                                                                    data:httpResponseData];
     [response autorelease];
     
+    [httpResponseData release]; // response retains this
+    httpResponseData = nil;
+
+    
     dispatch_async(request.dispatchQueue, ^{
         completionBlock(response);
         if (tempFilePath)
             [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
-
     });
     
     [self willChangeValueForKey:@"isExecuting"];
