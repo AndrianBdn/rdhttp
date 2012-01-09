@@ -62,7 +62,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     NSURL             *responseFileURL;
     NSData            *responseData;
     NSString          *responseTextCached;
-    NSDictionary      *responseHeaders;
 }
 
 - (id)initWithResponse:(NSHTTPURLResponse *)response 
@@ -113,7 +112,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     
     [httpError release];
     [responseTextCached release];
-    [responseHeaders release];
     [super dealloc];
 }
 
@@ -149,17 +147,11 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 }
 
 - (NSDictionary *)allHeaderFields {
-    if (responseHeaders == nil) {
-        responseHeaders = [[response allHeaderFields] retain];
-    }
-    return responseHeaders;
+    return [response allHeaderFields];
 }
 
 - (NSString *)valueForHTTPHeaderField:(NSString *)field {
-    if (responseHeaders == nil) {
-        responseHeaders = [[response allHeaderFields] retain];
-    }
-    return (NSString *)[responseHeaders objectForKey:field];
+    return (NSString *)[[response allHeaderFields] objectForKey:field];
 }
 
 - (NSData *)responseData {
