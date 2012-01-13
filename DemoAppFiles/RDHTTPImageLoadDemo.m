@@ -61,13 +61,10 @@ static NSString *const ImageLoadDemoURL = @"http://www.pictures-of-cats.org/imag
     if (operation) return;
     
     RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:ImageLoadDemoURL];
-    [request setProgressHandler:^(float progress, BOOL upload) {
-        if (upload == NO) // downloading
-        {
-            NSString *progressString = [NSString stringWithFormat:@"%@ %f", ImageLoadDemoURL, progress];
-            label.text = progressString;
-            NSLog(@"%@", progressString);
-        }
+    [request setDownloadProgressHandler:^(float progress) {
+        NSString *progressString = [NSString stringWithFormat:@"%@ %f", ImageLoadDemoURL, progress];
+        label.text = progressString;
+        NSLog(@"%@", progressString);
         
     }];
     

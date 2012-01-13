@@ -311,7 +311,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     
     [request setSSLCertificateTrustHandler:self.SSLCertificateTrustHandler];
     [request setHTTPAuthHandler:self.HTTPAuthHandler];
-    [request setProgressHandler:self.progressHandler];
+    [request setDownloadProgressHandler:self.downloadProgressHandler];
+    [request setUploadProgressHandler:self.uploadProgressHandler];
     [request setHeadersHandler:self.headersHandler];
     
     return request;
@@ -435,7 +436,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 #pragma mark - properties 
 @synthesize headersHandler;
-@synthesize progressHandler;
+@synthesize downloadProgressHandler;
+@synthesize uploadProgressHandler;
 @synthesize SSLCertificateTrustHandler;
 @synthesize HTTPAuthHandler;
 
@@ -1232,15 +1234,15 @@ static RDHTTPThread *_rdhttpThread;
     
     httpSavedDataLength += [data length];
     
-    if (request.progressHandler && sendProgressUpdates) {
-        rdhttp_progress_block_t progressBlock = request.progressHandler;
+    if (request.downloadProgressHandler && sendProgressUpdates) {
+        rdhttp_progress_block_t progressBlock = request.downloadProgressHandler;
         
         if (httpExpectedContentLength > 0) {
             float progress = (float)httpSavedDataLength  / (float)httpExpectedContentLength;
-            dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(progress, NO); });
+            dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(progress); });
         }
         else {
-            dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(-1.0f, NO); });
+            dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(-1.0f); });
             sendProgressUpdates = NO;
         }
     }
@@ -1251,12 +1253,12 @@ static RDHTTPThread *_rdhttpThread;
          totalBytesWritten:(NSInteger)totalBytesWritten 
  totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite 
 {
-    if (request.progressHandler) {
-        rdhttp_progress_block_t progressBlock = request.progressHandler;
+    if (request.uploadProgressHandler) {
+        rdhttp_progress_block_t progressBlock = request.uploadProgressHandler;
         
         if (totalBytesExpectedToWrite > 0) {
             float progress = (float)totalBytesWritten  / (float)totalBytesExpectedToWrite;
-            dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(progress, YES); });
+            dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(progress); });
         }
     }
 }
