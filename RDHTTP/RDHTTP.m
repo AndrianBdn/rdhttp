@@ -1110,6 +1110,8 @@ static RDHTTPThread *_rdhttpThread;
     if (self.isCancelled || self.isFinished) 
         return;
     
+    [self retain];
+    
     [connection cancel];
     connection = nil;
     
@@ -1117,8 +1119,11 @@ static RDHTTPThread *_rdhttpThread;
     isCancelled = YES;
     [self didChangeValueForKey:@"isCancelled"];
     
-    if ((request.completionBlock == nil) || (shouldCallCompletion == NO))
+    if ((request.completionBlock == nil) || (shouldCallCompletion == NO)) {
+        [self release];
         return;
+    }
+
     
     rdhttp_block_t completionBlock = request.completionBlock;
     
@@ -1132,6 +1137,7 @@ static RDHTTPThread *_rdhttpThread;
     
     dispatch_async(request.dispatchQueue, ^{
         completionBlock(response);
+        [self release];
     });
 }
 
