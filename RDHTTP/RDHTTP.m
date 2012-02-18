@@ -39,10 +39,10 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @end
 
 @interface RDHTTPFormPost(RDHTTPPrivate) 
-- (void)setupPostFormRequest:(NSMutableURLRequest *)request encoding:(NSStringEncoding)encoding;
+- (NSInputStream *)setupPostFormRequest:(NSMutableURLRequest *)request encoding:(NSStringEncoding)encoding;
 @end
 
-@interface RDHTTPOperation(RDHTTPRequestInterface)
+@interface RDHTTPOperation(RDHTTPPrivate)
 - (id)initWithRequest:(RDHTTPRequest *)aRequest;
 @end
 
@@ -217,23 +217,21 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 @end
 
-
-
-
-
-
-
-
 #pragma mark - RDHTTPRequest
 
 @interface RDHTTPRequest() {
     NSMutableURLRequest *urlRequest;
-    rdhttp_block_t completionBlock;
+    rdhttp_block_t      completionBlock;
+    NSString            *postBodyFilePath;
+    
 }
 - (id)initWithMethod:(NSString *)aMethod resource:(NSObject *)urlObject;
 - (void)prepare;
 - (rdhttp_block_t)completionBlock;
 - (NSString *)base64encodeString:(NSString *)string;
+- (NSInputStream *)regenerateBodyStream;
+
+@property(nonatomic, retain) NSString *postBodyFilePath;
 @end
 
 
@@ -247,6 +245,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize shouldUseRFC2616RedirectBehaviour;
 @synthesize cancelCausesCompletion;
 @synthesize useInternalThread;
+@synthesize postBodyFilePath;
 
 - (id)initWithMethod:(NSString *)aMethod resource:(NSObject *)urlObject {
     self = [super init];
@@ -280,6 +279,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (void)dealloc {
     [urlRequest release];
+    self.postBodyFilePath = nil;
     self.dispatchQueue = nil;
     [super dealloc];
 }
@@ -344,7 +344,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     [self setValue:headerValue forHTTPHeaderField:@"Authorization"];
 }
 
-- (void)setHTTPBodyStream:(NSInputStream *)inputStream contentType:(NSString *)contentType {
+- (void)postBodyCheckAndSetContentType:(NSString *)contentType {
     if ([urlRequest.HTTPMethod isEqualToString:@"GET"]) {
         NSLog(@"RDHTTP: trying to set post body for GET request");
     }
@@ -353,18 +353,22 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         NSLog(@"RDHTTP: trying to assign postBody with postFiles / multipartPostFiles set");
         NSLog(@"RDHTTP: postFields / multipartPostFiles reset");
         self.formPost = nil;
-    }
+    }   
     
     if (contentType) {
-        [self setValue:contentType forHTTPHeaderField:@"Content-Type"];
+        [urlRequest setValue:contentType forHTTPHeaderField:@"Content-Type"];
     }
-    
+}
+
+- (void)setHTTPBodyStream:(NSInputStream *)inputStream contentType:(NSString *)contentType {
+    [self postBodyCheckAndSetContentType:contentType];
     [urlRequest setHTTPBodyStream:inputStream];
 }
 
 - (void)setHTTPBodyData:(NSData *)data contentType:(NSString *)contentType {
-    [self setHTTPBodyStream:[NSInputStream inputStreamWithData:data] contentType:contentType];
-    [self setValue:[NSString stringWithFormat:@"%u", [data length]] forHTTPHeaderField:@"Content-Length"];
+    [self postBodyCheckAndSetContentType:contentType];
+    [urlRequest setValue:[NSString stringWithFormat:@"%u", [data length]] forHTTPHeaderField:@"Content-Length"];
+    [urlRequest setHTTPBody:data];
 }
 
 - (void)setHTTPBodyFilePath:(NSString *)filePath guessContentType:(BOOL)guess {
@@ -384,6 +388,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     unsigned long long size = [fileAttrs fileSize];
     [self setValue:[NSString stringWithFormat:@"%llu", size] forHTTPHeaderField:@"Content-Length"];
     [self setHTTPBodyStream:[NSInputStream inputStreamWithFileAtPath:filePath] contentType:contentType];
+    
+    self.postBodyFilePath = filePath;
 }
 
 - (RDHTTPFormPost *)formPost {
@@ -440,6 +446,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize uploadProgressHandler;
 @synthesize SSLCertificateTrustHandler;
 @synthesize HTTPAuthHandler;
+@synthesize HTTPBodyStreamCreationBlock;
 
 - (void)setURL:(NSURL *)URL {
     [urlRequest setURL:URL];
@@ -530,6 +537,36 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (void)prepare {
     [formPost setupPostFormRequest:urlRequest encoding:encoding];
+
+    // generate input stream using Creation Block 
+    if (urlRequest.HTTPBodyStream == nil && HTTPBodyStreamCreationBlock) {
+        NSInputStream *inputStream = HTTPBodyStreamCreationBlock();
+        [self setHTTPBodyStream:inputStream contentType:nil];
+    }
+    
+}
+
+- (NSInputStream *)regenerateBodyStream {
+    if (formPost) {
+        NSInputStream *newStream = [formPost setupPostFormRequest:nil encoding:encoding];
+        if (newStream == nil) {
+            NSLog(@"RDHTTP: we have tried to re-generate form post input stream, but failed");
+        }
+    }
+    
+    if (postBodyFilePath) {
+        return [NSInputStream inputStreamWithFileAtPath:self.postBodyFilePath];
+    }
+    
+    if (HTTPBodyStreamCreationBlock) {
+        NSInputStream *inputStream = HTTPBodyStreamCreationBlock();
+        if (inputStream) 
+            return inputStream;
+    }
+    
+    NSLog(@"RDHTTP: regenerateBodyStream was called, but we returned nil");
+    NSLog(@"Examine how post body stream was set. Check HTTPBodyInputStreamCreationBlock");
+    return nil;
 }
 
 @end
@@ -629,7 +666,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return [(__bridge_transfer NSData *)data autorelease];
 }
 
-- (void)setupPostFormRequest:(NSMutableURLRequest *)request encoding:(NSStringEncoding)encoding {
+- (NSInputStream *)setupPostFormRequest:(NSMutableURLRequest *)request encoding:(NSStringEncoding)encoding {
     NSString *charset = (__bridge_transfer NSString *)CFStringConvertEncodingToIANACharSetName(CFStringConvertNSStringEncodingToEncoding(encoding));
 
     if (multipartPostFiles) {
@@ -648,19 +685,20 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         [request addValue:contentType forHTTPHeaderField:@"Content-Type"];
 
         [request setHTTPBodyStream:postStream];
-        [postStream release];
         
-        return;
+        return [postStream autorelease];
     }
     else {
         // x-www-form-urlencoded body, in memory 
         if (postFields == nil)
-            return;
+            return nil;
 
         NSString *contentType = [NSString stringWithFormat:@"application/x-www-form-urlencoded; charset=%@", charset];
         [request addValue:contentType forHTTPHeaderField:@"Content-Type"];
         [request setHTTPBody:[self formURLEncodedBodyWithEncoding:NSUTF8StringEncoding]];
     }
+    
+    return nil;
 }
 
 - (NSData *)formURLEncodedBodyWithEncoding:(NSStringEncoding)encoding {
@@ -1333,6 +1371,10 @@ static RDHTTPThread *_rdhttpThread;
 
 - (BOOL)connectionShouldUseCredentialStorage:(NSURLConnection *)connection {
 	return YES;
+}
+
+- (NSInputStream *) connection:(NSURLConnection *)connection needNewBodyStream:(NSURLRequest *)resentRequest {
+    return [request regenerateBodyStream];
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {

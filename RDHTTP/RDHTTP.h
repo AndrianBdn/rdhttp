@@ -52,6 +52,10 @@ typedef void (^rdhttp_trustssl_block_t)(RDHTTPSSLServerTrust *sslTrustResponse);
 /** HTTP Auth block type */
 typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse);
 
+/** HTTP BODY Input Stream */
+typedef NSInputStream *(^rdhttp_httpbody_stream_block_t)();
+
+
 
 
 
@@ -115,11 +119,13 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 @property(nonatomic, assign) BOOL                           HTTPShouldHandleCookies;
 @property(nonatomic, assign) NSURL                          *URL;
 
+
 @property(nonatomic, copy)  rdhttp_httpauth_block_t HTTPAuthHandler;
 @property(nonatomic, copy)  rdhttp_trustssl_block_t SSLCertificateTrustHandler;
 @property(nonatomic, copy)  rdhttp_header_block_t   headersHandler;
 @property(nonatomic, copy)  rdhttp_progress_block_t downloadProgressHandler;
 @property(nonatomic, copy)  rdhttp_progress_block_t uploadProgressHandler;
+@property(nonatomic, copy)  rdhttp_httpbody_stream_block_t HTTPBodyStreamCreationBlock;
 
 // additional difinition of setters make Xcode autocompletion better
 - (void)setHTTPAuthHandler:(rdhttp_httpauth_block_t)HTTPAuthHandler;
@@ -127,6 +133,7 @@ typedef void (^rdhttp_httpauth_block_t)(RDHTTPAuthorizer *httpAuthorizeResponse)
 - (void)setHeadersHandler:(rdhttp_header_block_t)headersHandler;
 - (void)setDownloadProgressHandler:(rdhttp_progress_block_t)progressHandler;
 - (void)setUploadProgressHandler:(rdhttp_progress_block_t)progressHandler;
+- (void)setHTTPBodyStreamCreationBlock:(rdhttp_httpbody_stream_block_t)streamGenerator;
 
 /** Sets HTTP Authorization header for Basic Authorization using supplied credentials. 
  *  

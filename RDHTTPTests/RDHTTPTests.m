@@ -241,7 +241,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     
     STAssertTrue([self waitWithTimeout:5.0], @"wait timeout");
-    BOOL ok = [responseText rangeOfString:@"You see this page because there is no Web site at this address."].location != NSNotFound;
+    BOOL ok = [responseText rangeOfString:@"Website Designers for Taunton & Somerset Businesses"].location != NSNotFound;
     STAssertTrue(ok, @"No success indicator in password test");
     
 }
