@@ -19,15 +19,7 @@ Currently the library is in development. Following tasks are active:
 * Use library in production code for 100000+ users
 * Documentation
 
-usage: php namespace.php PREFIX
 
-	PREFIX would be added to all RDHTTP classes / global vars / types,
-	to emulate namespaces in Objective-C.
-
-	Usually two or three-letter prefixes are sufficient.
-	Prefixes are always capitalized.
-
-	PREFIXRDHTTP.h and PREFIXRDHTTP.m would be generated in scripts directory.
 ## Features
 
 * Blocks-oriented API
