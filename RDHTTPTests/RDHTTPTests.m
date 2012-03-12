@@ -48,7 +48,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 }
 
 - (void)testSimpleHTTPGet {
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/ok.html"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://osric.readdle.com/tests/ok.html"];
     __block NSString *responseText = nil;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
@@ -67,7 +67,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 }
 
 - (void)testHTTPGetUserAgent {
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://whatsmyuseragent.com/"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://whatsmyuseragent.com/"];
     request.userAgent = @"GlokayaKuzdra 1.0/RDHTTP";
     
     __block NSString *responseText = nil;
@@ -90,7 +90,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 
 - (void)testSimpleHTTPPost {
-    RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/post-values.php"];
+    RDHTTPRequest *request = [RDHTTPRequest postRequestWithURLString:@"http://osric.readdle.com/tests/post-values.php"];
     [[request formPost] setPostValue:@"1" forKey:@"a"];
     [[request formPost] setPostValue:@"2" forKey:@"b"];
     
@@ -114,7 +114,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 - (void)testBasicAuthHTTPGet {
     
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://browserspy.dk/password-ok.php"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://browserspy.dk/password-ok.php"];
     __block NSString *responseText = nil;
     
     [request setHTTPAuthHandler:^(RDHTTPAuthorizer *httpAuthorizeResponse) {
@@ -141,7 +141,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 - (void)testBasicAuthHTTPGetNoBlock {
     
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://browserspy.dk/password-ok.php"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://browserspy.dk/password-ok.php"];
     __block NSString *responseText = nil;
 
     [request tryBasicHTTPAuthorizationWithUsername:@"test" password:@"test"];
@@ -167,7 +167,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 - (void)testBasicAuthHTTPGetFAIL {
     
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://browserspy.dk/password-ok.php"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://browserspy.dk/password-ok.php"];
     __block NSString *responseText = nil;
     
 
@@ -196,7 +196,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 - (void)testNormalHTTPSGet {
     
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"https://encrypted.google.com/"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"https://encrypted.google.com/"];
     __block NSString *responseText = nil;
     __block NSError *error = nil;
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
@@ -222,7 +222,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 - (void)testSelfSignedHTTPSGet {
     
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"https://www.pcwebshop.co.uk/"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"https://www.pcwebshop.co.uk/"];
     __block NSString *responseText = nil;
     
     [request setSSLCertificateTrustHandler:^(RDHTTPSSLServerTrust *sslTrustQuery) {
@@ -273,7 +273,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 
 - (void)testCancelMethod {
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://www.ubuntu.com/start-download?distro=desktop&bits=32&release=latest"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://www.ubuntu.com/start-download?distro=desktop&bits=32&release=latest"];
     
     __block BOOL isCancelled = NO;
     
@@ -361,7 +361,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 
 - (void)testHTTPGetRedirect {
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/redirect1.php"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://osric.readdle.com/tests/redirect1.php"];
     __block NSString *responseText = nil;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
@@ -382,7 +382,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 }
 
 - (void)testHTTPGetRedirectNO {
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/redirect1.php"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://osric.readdle.com/tests/redirect1.php"];
     request.shouldRedirect = NO;
     
     __block NSString *responseText = nil;    
@@ -410,7 +410,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 
 - (void)testHTTPRedirectLoop {
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/redirect-loop1.php"];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://osric.readdle.com/tests/redirect-loop1.php"];
    
     __block NSString *responseText = nil;    
     __block NSError *error = nil;
@@ -433,7 +433,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 }
 
 - (void)testHTTPRedirectPost2616 {
-    RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/redirect-post.php"];
+    RDHTTPRequest *request = [RDHTTPRequest postRequestWithURLString:@"http://osric.readdle.com/tests/redirect-post.php"];
     request.shouldUseRFC2616RedirectBehaviour = YES;
     
     [[request formPost] setPostValue:@"1" forKey:@"a"];

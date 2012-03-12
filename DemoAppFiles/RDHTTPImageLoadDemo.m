@@ -60,7 +60,7 @@ static NSString *const ImageLoadDemoURL = @"http://www.pictures-of-cats.org/imag
 
     if (operation) return;
     
-    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:ImageLoadDemoURL];
+    RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:ImageLoadDemoURL];
     [request setDownloadProgressHandler:^(float progress) {
         NSString *progressString = [NSString stringWithFormat:@"%@ %f", ImageLoadDemoURL, progress];
         label.text = progressString;

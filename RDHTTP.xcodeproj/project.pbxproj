@@ -236,7 +236,7 @@
 		E63D88DA148141F000F15E16 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0420;
+				LastUpgradeCheck = 0430;
 				ORGANIZATIONNAME = Readdle;
 			};
 			buildConfigurationList = E63D88DD148141F000F15E16 /* Build configuration list for PBXProject "RDHTTP" */;

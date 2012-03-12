@@ -322,17 +322,31 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return urlRequest;
 }
 
-+ (id)customRequest:(NSString *)method withURL:(NSObject *)url {
-    return [[[self alloc] initWithMethod:method resource:url] autorelease];
-}
-
-+ (id)getRequestWithURL:(NSObject *)url {
++ (id)getRequestWithURL:(NSURL *)url {
     return [self customRequest:@"GET" withURL:url];
 }
 
-+ (id)postRequestWithURL:(NSObject *)url {
++ (id)getRequestWithURLString:(NSString *)urlString {
+    return [self customRequest:@"GET" withURLString:urlString];
+}
+
++ (id)postRequestWithURL:(NSURL *)url {
     return [self customRequest:@"POST" withURL:url];
 }
+
++ (id)postRequestWithURLString:(NSURL *)urlString {
+    return [self customRequest:@"POST" withURL:urlString];
+}
+
++ (id)customRequest:(NSString *)method withURL:(NSURL *)url {
+    return [[[self alloc] initWithMethod:method resource:url] autorelease];
+}
+
++ (id)customRequest:(NSString *)method withURLString:(NSString *)urlString {
+    return [[[self alloc] initWithMethod:method resource:urlString] autorelease];
+}
+
+
 
 - (void)setValue:(NSString *)value forHTTPHeaderField:(NSString *)field {
     [urlRequest setValue:value forHTTPHeaderField:field];
@@ -508,20 +522,16 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 #pragma mark - internal
 
-- (NSString *)base64encodeString:(NSString *)string {
-    NSMutableString *response = [NSMutableString stringWithCapacity:string.length * 2];
++ (NSString *)base64encodeData:(NSData *)data {
     static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    
-    static int mod_table[] = {0, 2, 1};
-    
-    NSData *stringData = [string dataUsingEncoding:encoding];
-    const char *data = [stringData bytes];
-    NSUInteger input_length = [stringData length];
+    const char *dataptr = [data bytes];
+    const NSUInteger input_length = [data length];
+    NSMutableString *response = [NSMutableString stringWithCapacity:input_length*2];
     
     for(NSUInteger i=0; i<input_length;) {
-        uint32_t octet_a = i < input_length ? data[i++] : 0;
-        uint32_t octet_b = i < input_length ? data[i++] : 0;
-        uint32_t octet_c = i < input_length ? data[i++] : 0;
+        uint32_t octet_a = i < input_length ? dataptr[i++] : 0;
+        uint32_t octet_b = i < input_length ? dataptr[i++] : 0;
+        uint32_t octet_c = i < input_length ? dataptr[i++] : 0;
         uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
         [response appendFormat:@"%c", cb64[(triple >> 3 * 6) & 0x3F]];
         [response appendFormat:@"%c", cb64[(triple >> 2 * 6) & 0x3F]];
@@ -529,10 +539,15 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         [response appendFormat:@"%c", cb64[(triple >> 0 * 6) & 0x3F]];        
     }
     
+    static const int mod_table[] = {0, 2, 1};
     for (int i = 0; i < mod_table[input_length % 3]; i++)
         [response appendString:@"="];
-
+    
     return response;
+}
+
+- (NSString *)base64encodeString:(NSString *)string {
+    return [[self class] base64encodeData:[string dataUsingEncoding:encoding]];
 }
 
 - (void)prepare {
@@ -932,18 +947,22 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 - (void)scheduleInRunLoop:(NSRunLoop *)aRunLoop forMode:(NSString *)mode {
     // Nothing to do here, because this stream does not implement a run loop to produce its data.
+    // Should we bother to implement this method? Contact andrian@readdle.com if you know positive answer
 }
 
 - (void)removeFromRunLoop:(NSRunLoop *)aRunLoop forMode:(NSString *)mode {
     // Nothing to do here, because this stream does not implement a run loop to produce its data.
+    // Should we bother to implement this method? Contact andrian@readdle.com if you know positive answer
 }
 
 - (void) _scheduleInCFRunLoop: (CFRunLoopRef) inRunLoop forMode: (CFStringRef) inMode {
     // Nothing to do here, because this stream does not implement a run loop to produce its data.
+    // Should we bother to implement this method? Contact andrian@readdle.com if you know positive answer
 }
 
 - (void) _unscheduleFromCFRunLoop:(CFRunLoopRef)inRunLoop forMode:(CFStringRef)inMode {
     // Nothing to do here, because this stream does not implement a run loop to produce its data.
+    // Should we bother to implement this method? Contact andrian@readdle.com if you know positive answer
 }
 
 - (BOOL) _setCFClientFlags: (CFOptionFlags)inFlags
@@ -951,6 +970,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
                    context: (CFStreamClientContext *) inContext
 {
     // Nothing to do here, because this stream does not implement a run loop to produce its data.
+    // Should we bother to implement this method? Contact andrian@readdle.com if you know positive answer
     return NO;
 }
 
@@ -970,15 +990,18 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @interface RDHTTPChallangeDecision() {
 @protected
     NSURLAuthenticationChallenge *challenge;
+    NSString *host;
 }
-- (id)initWithChallenge:(NSURLAuthenticationChallenge *)aChallenge;
+- (id)initWithChallenge:(NSURLAuthenticationChallenge *)aChallenge host:(NSString *)aHost;
 @end
 
 @implementation RDHTTPChallangeDecision
-- (id)initWithChallenge:(NSURLAuthenticationChallenge *)aChallenge {
+@synthesize host;
+- (id)initWithChallenge:(NSURLAuthenticationChallenge *)aChallenge host:(NSString *)aHost {
     self = [super init];
     if (self) {
         challenge = [aChallenge retain];
+        host = [aHost retain];
     }
     return self;
 }
@@ -988,6 +1011,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 }
 
 - (void)dealloc {
+    [host release];
     [challenge release];
     [super dealloc];
 }
@@ -995,6 +1019,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 
 @implementation RDHTTPAuthorizer
+@dynamic host;
 
 - (void)continueWithUsername:(NSString *)username password:(NSString *)password {
     
@@ -1014,6 +1039,7 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @end
 
 @implementation RDHTTPSSLServerTrust
+@dynamic host;
 
 - (void)trust {
     [[challenge sender] useCredential:[NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust] 
@@ -1028,13 +1054,21 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 
 #pragma mark - RDHTTPThread
 
-@interface RDHTTPThread : NSThread {
-}
-@end
-
 static RDHTTPThread *_rdhttpThread;
 
 @implementation RDHTTPThread
+
++ (RDHTTPThread *)defaultThread {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        if (_rdhttpThread == nil) {
+            _rdhttpThread = [[RDHTTPThread alloc] init];
+            [_rdhttpThread start];
+        }            
+    });
+    
+    return _rdhttpThread;
+}
 
 - (void)main {
     @autoreleasepool {
@@ -1045,6 +1079,7 @@ static RDHTTPThread *_rdhttpThread;
         while(!self.isCancelled && [loop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:10.0]]);
     }
 }
+
 @end
 
 
@@ -1118,13 +1153,15 @@ static RDHTTPThread *_rdhttpThread;
     NSAssert(isExecuting && isFinished == NO, @"RDHTTPConnection: someone called -(void)start twice");
     
     if (request.useInternalThread) {
-        static dispatch_once_t onceToken;
-        dispatch_once(&onceToken, ^{
-            if (_rdhttpThread == nil) {
-                _rdhttpThread = [[RDHTTPThread alloc] init];
-                [_rdhttpThread start];
-            }            
-        });
+#ifdef TARGET_OS_IPHONE
+        NSObject<UIApplicationDelegate> *appDelegate = [UIApplication sharedApplication].delegate;
+        if ([appDelegate respondsToSelector:@selector(rdhttpThread)]) {
+            _rdhttpThread = [appDelegate performSelector:@selector(rdhttpThread)];
+        }
+#endif
+        if (_rdhttpThread == nil) {
+            _rdhttpThread = [RDHTTPThread defaultThread];
+        }
         
         [self performSelector:@selector(_start) onThread:_rdhttpThread withObject:nil waitUntilDone:NO];
     }
@@ -1378,9 +1415,11 @@ static RDHTTPThread *_rdhttpThread;
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {
+    NSString *host = [[request _nsurlrequest].URL host];
+    
     if ([challenge.protectionSpace.authenticationMethod isEqualToString:@"NSURLAuthenticationMethodServerTrust"]) {
         // certificate trust
-        RDHTTPSSLServerTrust *serverTrust = [[RDHTTPSSLServerTrust alloc] initWithChallenge:challenge];
+        RDHTTPSSLServerTrust *serverTrust = [[RDHTTPSSLServerTrust alloc] initWithChallenge:challenge host:host];
         
         rdhttp_trustssl_block_t trust = [request SSLCertificateTrustHandler];
         if (trust == nil) {
@@ -1398,7 +1437,7 @@ static RDHTTPThread *_rdhttpThread;
     else {
         // normal login-password auth: 
         const int kAllowedLoginFailures = 1;
-        RDHTTPAuthorizer *httpAuthorizer = [[RDHTTPAuthorizer alloc] initWithChallenge:challenge];
+        RDHTTPAuthorizer *httpAuthorizer = [[RDHTTPAuthorizer alloc] initWithChallenge:challenge host:host];
         
         rdhttp_httpauth_block_t auth = [request HTTPAuthHandler];
         

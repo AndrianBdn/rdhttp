@@ -39,7 +39,7 @@ function rdhttp_apply_namespace($contents, $prefix) {
 	
 	$rd_classes = array('RDHTTPFormPost', 'RDHTTPOperation', 'RDHTTPResponse', 'RDHTTPChallangeDecision', 
 						'RDHTTPAuthorizer', 'RDHTTPSSLServerTrust', 'RDHTTPRequest', 
-						'RDHTTPMultipartPostStream', 'RDHTTPThread');
+						'RDHTTPMultipartPostStream', 'RDHTTPThread', 'RDHTTPThreadProviderAppDelegate');
 						
 	
 	
