@@ -73,4 +73,9 @@
      */
 }
 
+- (RDHTTPThread *)rdhttpThread {
+    NSLog(@"returning RDHTTP from app delegate");
+    return [RDHTTPThread defaultThread];
+}
+
 @end

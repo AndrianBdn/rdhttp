@@ -334,8 +334,8 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return [self customRequest:@"POST" withURL:url];
 }
 
-+ (id)postRequestWithURLString:(NSURL *)urlString {
-    return [self customRequest:@"POST" withURL:urlString];
++ (id)postRequestWithURLString:(NSString *)urlString {
+    return [self customRequest:@"POST" withURLString:urlString];
 }
 
 + (id)customRequest:(NSString *)method withURL:(NSURL *)url {
@@ -1153,14 +1153,19 @@ static RDHTTPThread *_rdhttpThread;
     NSAssert(isExecuting && isFinished == NO, @"RDHTTPConnection: someone called -(void)start twice");
     
     if (request.useInternalThread) {
-#ifdef TARGET_OS_IPHONE
-        NSObject<UIApplicationDelegate> *appDelegate = [UIApplication sharedApplication].delegate;
-        if ([appDelegate respondsToSelector:@selector(rdhttpThread)]) {
-            _rdhttpThread = [appDelegate performSelector:@selector(rdhttpThread)];
-        }
-#endif
+        
         if (_rdhttpThread == nil) {
-            _rdhttpThread = [RDHTTPThread defaultThread];
+            
+#ifdef TARGET_OS_IPHONE
+            NSObject<UIApplicationDelegate> *appDelegate = [UIApplication sharedApplication].delegate;
+            if ([appDelegate respondsToSelector:@selector(rdhttpThread)]) {
+                _rdhttpThread = [appDelegate performSelector:@selector(rdhttpThread)];
+            }
+#endif
+            if (_rdhttpThread == nil) {
+                _rdhttpThread = [RDHTTPThread defaultThread];
+            }
+            
         }
         
         [self performSelector:@selector(_start) onThread:_rdhttpThread withObject:nil waitUntilDone:NO];

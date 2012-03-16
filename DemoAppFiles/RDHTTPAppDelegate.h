@@ -7,8 +7,9 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "RDHTTP.h"
 
-@interface RDHTTPAppDelegate : UIResponder <UIApplicationDelegate>
+@interface RDHTTPAppDelegate : UIResponder <UIApplicationDelegate, RDHTTPThreadProviderAppDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
 

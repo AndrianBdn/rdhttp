@@ -16,13 +16,14 @@ Currently the library is in development. Following tasks are active:
 * <del>better GCD / threading options</del>
 * <del>NSOperation methods</del>
 * <del>Submit any binary to App Store (private API test)</del>
+* <del>Documentation</del>
 * Use library in production code for 100000+ users
-* Documentation
+
 
 
 ## Features
 
-* Blocks-oriented API
+* Blocks-oriented asynchronous API
 * Easy access to HTTP request / response fields 
 * HTTP errors detection
 * Downloading data to memory or file 
@@ -36,13 +37,19 @@ Currently the library is in development. Following tasks are active:
 ## Requirements 
 
 * iOS4+
-* possibly OS X
+* may work with OS X (untested)
 
 
 ## Installation 
 
 1. Copy RDHTTP.h and RDHTTP.m from RDHTTP directory to your Xcode project. 
 2. Add MobileCoreServices.framework
+
+
+
+## Documentation 
+
+RDHTTP documentation is written as appledoc comments in RDHTTP.h file.
 
 
 ## Obj-C Namespaces 
@@ -61,13 +68,18 @@ Prefixes are always capitalized.
 PREFIXRDHTTP.h and PREFIXRDHTTP.m would be generated in scripts directory.
 ```
 
+Prefixed/namespaced versions may be required if you want to bundle RDHTTP with your library and avoid linker collisions with other code that may use RDHTTP. 
+
+If you're using namespace-prefixed versions in your app you should implement rdhttpThread method in your app delegate to avoid multiple RDHTTP thread creation.
+
+
 
 ## Usage Example
 
 Simple HTTP GET:
 
 ```objective-c
-RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle.com/tests/ok.html"];
+RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://osric.readdle.com/tests/ok.html"];
 [request startWithCompletionHandler:^(RDHTTPResponse *response) {
     if (response.error)
         NSLog(@"error: %@", response.error) 
@@ -79,7 +91,7 @@ RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://osric.readdle
 Form-data compatible HTTP POST:
 
 ```objective-c
-RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdle.com/tests/post-values.php"];
+RDHTTPRequest *request = [RDHTTPRequest postRequestWithURLString:@"http://osric.readdle.com/tests/post-values.php"];
 
 [[request formPost] setPostValue:@"value" forKey:@"fieldName"];
 [[request formPost] setPostValue:@"anotherValue" forKey:@"anotherField"];
@@ -96,10 +108,16 @@ RDHTTPRequest *request = [RDHTTPRequest postRequestWithURL:@"http://osric.readdl
 Saving file: 
 
 ```objective-c
-RDHTTPRequest *request = [RDHTTPRequest getRequestWithURL:@"http://www.ubuntu.com/start-download?distro=desktop&bits=32&release=latest"];
+RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://www.ubuntu.com/start-download?distro=desktop&bits=32&release=latest"];
 
 request.shouldSaveResponseToFile = YES;
 
+[request setDownloadProgressHandler:^(float progress) {
+    NSString *progressString = [NSString stringWithFormat:@"%@ %f", ImageLoadDemoURL, progress];
+    label.text = progressString;
+    NSLog(@"%@", progressString);
+}];
+    
 RDHTTPOperation *operation = [request startWithCompletionHandler:^(RDHTTPResponse *response) {
 
     if (response.error) {
