@@ -5,6 +5,9 @@ ready for real world tasks.
 The library was designed as a simple, self-contained solution (just RDHTTP.h and RDHTTP.m). 
 It is reasonably low-level and does not contain any features unrelated to HTTP (JSON, XML, SOAP, ...).
 
+The API is inspired by now unsupported ASIHTTPRequest with few conceptual changes: blocks instead of delegates/selectors,
+request/operation/response separation, complete absense of synchronous calls.
+
 ## TODO 
 Currently the library is in development. Following tasks are active: 
 
@@ -17,7 +20,7 @@ Currently the library is in development. Following tasks are active:
 * <del>NSOperation methods</del>
 * <del>Submit any binary to App Store (private API test)</del>
 * <del>Documentation</del>
-* Use library in production code for 100000+ users
+* Use library in production code for 100000+ users (done with small subset of features)
 
 
 
@@ -113,7 +116,7 @@ RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"http://www.ubu
 request.shouldSaveResponseToFile = YES;
 
 [request setDownloadProgressHandler:^(float progress) {
-    NSString *progressString = [NSString stringWithFormat:@"%@ %f", ImageLoadDemoURL, progress];
+    NSString *progressString = [NSString stringWithFormat:@"%f", progress];
     label.text = progressString;
     NSLog(@"%@", progressString);
 }];
