@@ -142,6 +142,10 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     return nil;
 }
 
+- (NSURL *)URL  {
+    return response.URL;
+}
+
 - (NSUInteger)statusCode {
     return response.statusCode;
 }

@@ -341,6 +341,10 @@ typedef NSInputStream *(^rdhttp_httpbody_stream_block_t)();
 /** A dictionary for passing custom information from RDHTTPRequest to RDHTTPResponse */
 @property(nonatomic, readonly) NSDictionary *userInfo;
 
+/** An URL of the resourse that returned the response */
+@property(nonatomic, readonly) NSURL        *URL;
+
+
 /** Describes the error that occurred if non-200 HTTP response was returned. */
 @property(nonatomic, readonly) NSError      *httpError;
 
@@ -352,6 +356,7 @@ typedef NSInputStream *(^rdhttp_httpbody_stream_block_t)();
 
 /** Returns the receiver’s HTTP status code. */
 @property(nonatomic, readonly) NSUInteger   statusCode;
+
 
 /** Returns HTTP response as string. Encoding specified in Content-Type is used, default encoding is UTF-8. */
 @property(nonatomic, readonly) NSString     *responseString;

@@ -221,7 +221,8 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
 
 
 - (void)testSelfSignedHTTPSGet {
-    
+    // just random site from the Internet with self-signed cert. 
+    // the test may fail if they change something 
     RDHTTPRequest *request = [RDHTTPRequest getRequestWithURLString:@"https://www.pcwebshop.co.uk/"];
     __block NSString *responseText = nil;
     
@@ -241,7 +242,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     
     
     STAssertTrue([self waitWithTimeout:5.0], @"wait timeout");
-    BOOL ok = [responseText rangeOfString:@"Website Designers for Taunton & Somerset Businesses"].location != NSNotFound;
+    BOOL ok = [responseText rangeOfString:@"Taunton Website Design Company"].location != NSNotFound;
     STAssertTrue(ok, @"No success indicator in password test");
     
 }
@@ -365,6 +366,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     __block NSString *responseText = nil;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        NSLog(@"response URL %@ ", response.URL);
         if (response.error == nil) {
             responseText = [response.responseString copy];
         }
@@ -389,6 +391,7 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     __block NSError *error = nil;
     
     [request startWithCompletionHandler:^(RDHTTPResponse *response) {
+        NSLog(@"response URL %@ ", response.URL);
         responseText = [response.responseString copy];
         error = [response.httpError copy];
         operationComplete = YES;
