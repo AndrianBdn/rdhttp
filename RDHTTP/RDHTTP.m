@@ -1191,7 +1191,7 @@ static RDHTTPThread *_rdhttpThread;
 
 
 - (void)_cancel:(BOOL)shouldCallCompletion {
-    if (self.isCancelled || self.isFinished) 
+    if (self.isCancelled) 
         return;
     
     [self retain];
@@ -1226,11 +1226,21 @@ static RDHTTPThread *_rdhttpThread;
 }
 
 - (void)cancelWithCompletionHandler {
-    [self _cancel:YES];
+    if (dispatch_get_current_queue() == request.dispatchQueue) 
+        [self _cancel:YES];
+    else
+        dispatch_sync(request.dispatchQueue, ^{
+            [self _cancel:YES];
+        });
 }
 
 - (void)cancel {
-    [self _cancel:request.cancelCausesCompletion];
+    if (dispatch_get_current_queue() == request.dispatchQueue) 
+        [self _cancel:request.cancelCausesCompletion];
+    else
+        dispatch_sync(request.dispatchQueue, ^{
+            [self _cancel:request.cancelCausesCompletion];
+        });
 }
 
 - (void)prepareTempFile {
@@ -1262,6 +1272,9 @@ static RDHTTPThread *_rdhttpThread;
                                                                         data:nil] autorelease];
         
         dispatch_async(request.dispatchQueue, ^{
+            if (self.isCancelled)
+                return;
+            
             completionBlock(response);
             if (tempFilePath)
                 [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
@@ -1308,6 +1321,8 @@ static RDHTTPThread *_rdhttpThread;
                                                                         data:nil] autorelease];
         
         dispatch_async(request.dispatchQueue, ^{
+            if (self.isCancelled)
+                return;
             request.headersHandler(response, self);
         });
     }
@@ -1329,10 +1344,10 @@ static RDHTTPThread *_rdhttpThread;
         
         if (httpExpectedContentLength > 0) {
             float progress = (float)httpSavedDataLength  / (float)httpExpectedContentLength;
-            dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(progress); });
+            dispatch_async(request.dispatchQueue, ^{ if (self.isCancelled) return; progressBlock(progress); });
         }
         else {
-            dispatch_async(dispatch_get_main_queue(), ^{ progressBlock(-1.0f); });
+            dispatch_async(request.dispatchQueue, ^{ if (self.isCancelled) return; progressBlock(-1.0f); });
             sendProgressUpdates = NO;
         }
     }
@@ -1438,6 +1453,8 @@ static RDHTTPThread *_rdhttpThread;
         }
 
         dispatch_async(request.dispatchQueue, ^{ 
+            if (self.isCancelled)
+                return;
             trust(serverTrust);
         });
         [serverTrust release];
@@ -1457,6 +1474,9 @@ static RDHTTPThread *_rdhttpThread;
         }
             
         dispatch_async(request.dispatchQueue, ^{
+            if (self.isCancelled)
+                return;
+            
             auth(httpAuthorizer);
         });
         
