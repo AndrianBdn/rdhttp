@@ -208,12 +208,6 @@ typedef NSInputStream *(^rdhttp_httpbody_stream_block_t)();
 @property(nonatomic, assign) BOOL               shouldUseRFC2616RedirectBehaviour;
 
 
-/** A Boolean that indicates whether cancel method send to <RDHTTPOperation> will cause execution of 
- * completion handler specified in <operationWithCompletionHandler:> or <startWithCompletionHandler:>
- */
-@property(nonatomic, assign) BOOL               cancelCausesCompletion;
-
-
 /** A String which would be used as a value for User-Agent: HTTP request header. */
 @property(nonatomic, copy)   NSString           *userAgent;
 
@@ -335,9 +329,6 @@ typedef NSInputStream *(^rdhttp_httpbody_stream_block_t)();
     withIntermediateDirectories:(BOOL)createIntermediates 
                           error:(NSError **)error;
 
-/** A Boolean that indicates whether source RDHTTP requests was cancelled. You can recieve cancelled responses if someonce calls  <[RDHTTPOperation cancelWithCompletionHandler]> or <[RDHTTPRequest setCancelCausesCompletion:]> was set to YES. */
-@property(nonatomic, readonly) BOOL         isCancelled;
-
 /** A dictionary for passing custom information from RDHTTPRequest to RDHTTPResponse */
 @property(nonatomic, readonly) NSDictionary *userInfo;
 
@@ -430,12 +421,8 @@ typedef NSInputStream *(^rdhttp_httpbody_stream_block_t)();
 @property (readonly) BOOL isExecuting;
 @property (readonly) BOOL isFinished;
 @property (readonly) BOOL isCancelled;
-
-/** Cancels this operation calling its completion handler. 
- *  Completion handler will receieve <RDHTTPResponse> object with <isCancelled> property set. Its response and error fields would be nil.  
- */
-- (void)cancelWithCompletionHandler;
 @end
+
 
 
 

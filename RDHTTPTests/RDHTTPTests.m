@@ -279,31 +279,19 @@ static const NSTimeInterval runloopTimerResolution = 0.05;
     __block BOOL isCancelled = NO;
     
     request.shouldSaveResponseToFile = YES;
-    request.cancelCausesCompletion = YES;
     
     RDHTTPOperation *operation = [request startWithCompletionHandler:^(RDHTTPResponse *response) {
-        NSLog(@"cancelled operation response %@", response);
-    
-//        NSURL *dest = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
-//                                                              inDomains:NSUserDomainMask] objectAtIndex:0];
-//        
-//        dest = [dest URLByAppendingPathComponent:@"latest-ubuntu.iso"];
-//        
-//        [response moveResponseFileToURL:dest
-//            withIntermediateDirectories:NO 
-//                                  error:nil];
-        
-        isCancelled = [response isCancelled];
-        
-        operationComplete = YES;
-        
+        STFail(@"completion handler called!");        
     }];
     
-    double delayInSeconds = 10.0;
+    double delayInSeconds = 3.0;
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, delayInSeconds * NSEC_PER_SEC);
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
         [operation cancel];
         NSLog(@"cancel operation");
+        isCancelled = YES;
+        if (operation.isCancelled)
+            operationComplete = YES;
     });
     
     STAssertTrue([self waitWithTimeout:25.0], @"wait timeout");

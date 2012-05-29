@@ -67,7 +67,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 - (id)initWithResponse:(NSHTTPURLResponse *)response 
                request:(RDHTTPRequest *)request
                  error:(NSError *)error
-           isCancelled:(BOOL)anIsCancelledFlag
           tempFilePath:(NSString *)tempFilePath
                   data:(NSData *)responseData;
 
@@ -78,13 +77,11 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize error;
 @synthesize userInfo;
 @synthesize responseData;
-@synthesize isCancelled;
 @synthesize responseFileURL;
 
 - (id)initWithResponse:(NSHTTPURLResponse *)aResponse 
                request:(RDHTTPRequest *)aRequest
                  error:(NSError *)anError
-           isCancelled:(BOOL)anIsCancelledFlag
           tempFilePath:(NSString *)aTempFilePath
                   data:(NSData *)aResponseData 
 {
@@ -96,7 +93,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
         if (aTempFilePath) 
             responseFileURL = [[NSURL fileURLWithPath:aTempFilePath] retain];
         responseData = [aResponseData retain];
-        isCancelled = anIsCancelledFlag;
     }
     return self;
 }
@@ -247,7 +243,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
 @synthesize encoding;
 @synthesize shouldRedirect;
 @synthesize shouldUseRFC2616RedirectBehaviour;
-@synthesize cancelCausesCompletion;
 @synthesize useInternalThread;
 @synthesize postBodyFilePath;
 
@@ -308,7 +303,6 @@ NSString *const RDHTTPResponseCodeErrorDomain = @"RDHTTPResponseCodeErrorDomain"
     request.userInfo = userInfoCopy;
     [userInfoCopy release];
     request.shouldSaveResponseToFile = shouldSaveResponseToFile;
-    request.cancelCausesCompletion = cancelCausesCompletion;
     request.shouldRedirect = shouldRedirect;
     request.shouldUseRFC2616RedirectBehaviour = shouldUseRFC2616RedirectBehaviour;
     request.useInternalThread = useInternalThread;
@@ -1190,7 +1184,7 @@ static RDHTTPThread *_rdhttpThread;
              
 
 
-- (void)_cancel:(BOOL)shouldCallCompletion {
+- (void)_cancel {
     if (self.isCancelled) 
         return;
     
@@ -1203,44 +1197,25 @@ static RDHTTPThread *_rdhttpThread;
     isCancelled = YES;
     [self didChangeValueForKey:@"isCancelled"];
     
-    if ((request.completionBlock == nil) || (shouldCallCompletion == NO)) {
-        [self release];
-        return;
-    }
-
-    
-    rdhttp_block_t completionBlock = request.completionBlock;
-    
-    RDHTTPResponse *response = [[RDHTTPResponse alloc] initWithResponse:nil
-                                                                request:request
-                                                                  error:nil
-                                                            isCancelled:YES
-                                                           tempFilePath:nil
-                                                                   data:nil];
-    [response autorelease];
-    
-    dispatch_async(request.dispatchQueue, ^{
-        completionBlock(response);
-        [self release];
-    });
-}
-
-- (void)cancelWithCompletionHandler {
-    if (dispatch_get_current_queue() == request.dispatchQueue) 
-        [self _cancel:YES];
-    else
-        dispatch_sync(request.dispatchQueue, ^{
-            [self _cancel:YES];
-        });
+    [self release];
+    return;
 }
 
 - (void)cancel {
-    if (dispatch_get_current_queue() == request.dispatchQueue) 
-        [self _cancel:request.cancelCausesCompletion];
-    else
+    // We have to retain self here, because operation may be released
+    // on completion before dispatch_sync will execute its block.
+    // dispatch_sync DOES NOT copy its block, so self will not be retained there
+    // and we will crash.
+    [self retain];
+    if (dispatch_get_current_queue() == request.dispatchQueue) {
+        [self _cancel];
+    }
+    else {
         dispatch_sync(request.dispatchQueue, ^{
-            [self _cancel:request.cancelCausesCompletion];
+            [self _cancel];
         });
+    }
+    [self release];
 }
 
 - (void)prepareTempFile {
@@ -1267,7 +1242,6 @@ static RDHTTPThread *_rdhttpThread;
         RDHTTPResponse *response = [[[RDHTTPResponse alloc] initWithResponse:nil
                                                                      request:request
                                                                        error:error
-                                                                 isCancelled:NO
                                                                 tempFilePath:tempFilePath
                                                                         data:nil] autorelease];
         
@@ -1316,7 +1290,6 @@ static RDHTTPThread *_rdhttpThread;
         RDHTTPResponse *response = [[[RDHTTPResponse alloc] initWithResponse:httpResponse
                                                                      request:request
                                                                        error:nil
-                                                                 isCancelled:NO
                                                                 tempFilePath:nil // too early to pass tempFilePath, it is empty
                                                                         data:nil] autorelease];
         
@@ -1382,7 +1355,6 @@ static RDHTTPThread *_rdhttpThread;
     RDHTTPResponse *response = [[RDHTTPResponse alloc] initWithResponse:httpResponse
                                                                 request:request
                                                                   error:nil
-                                                            isCancelled:NO
                                                            tempFilePath:tempFilePath
                                                                    data:httpResponseData];
     [response autorelease];
